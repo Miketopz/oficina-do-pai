@@ -27,7 +27,6 @@ export function VehicleCard({ title, plate, subtitle, detail, link, actionIcon, 
     const statusLabel = status === 'danger' ? 'VENCIDO' : status === 'warning' ? 'PRÓXIMO' : 'EM DIA';
 
     return (
-    return (
         <Card className={`group relative overflow-hidden bg-card border border-border shadow-md hover:border-primary transition-all duration-300 ${borderClass}`}>
             {/* O Link agora envolve o conteúdo principal, mas não o botão de ação */}
             <Link href={link} className="block cursor-pointer">
@@ -70,6 +69,5 @@ export function VehicleCard({ title, plate, subtitle, detail, link, actionIcon, 
                 </div>
             )}
         </Card>
-    );
     );
 }

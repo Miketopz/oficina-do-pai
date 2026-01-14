@@ -206,38 +206,39 @@ export default function ClientProfilePaage({ params }: { params: { id: string } 
                             </DialogContent>
                         </Dialog>
                     </div>
+                </div>
 
-                    {/* FLEET LIST */}
-                    <h2 className="text-xl font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                        <Car className="text-gray-300" /> Frota do Cliente ({vehicles.length})
-                    </h2>
+                {/* FLEET LIST */}
+                <h2 className="text-xl font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                    <Car className="text-gray-300" /> Frota do Cliente ({vehicles.length})
+                </h2>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {vehicles.map(vehicle => (
-                            <div key={vehicle.id} className="relative group">
-                                <VehicleCard
-                                    title={vehicle.model}
-                                    plate={vehicle.plate}
-                                    link={`/vehicle/${vehicle.id}`} // Takes to history page
-                                    detail="VER HISTÓRICO"
-                                    subtitle={
-                                        <div className="mt-2 text-sm text-gray-400 font-mono">
-                                            Cadastrado em {new Date().getFullYear()}
-                                        </div>
-                                    }
-                                    status="ok"
-                                    actionIcon={<Trash2 size={18} />}
-                                    onAction={() => handleDeleteVehicle(vehicle.id, vehicle.model)}
-                                />
-                            </div>
-                        ))}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {vehicles.map(vehicle => (
+                        <div key={vehicle.id} className="relative group">
+                            <VehicleCard
+                                title={vehicle.model}
+                                plate={vehicle.plate}
+                                link={`/vehicle/${vehicle.id}`} // Takes to history page
+                                detail="VER HISTÓRICO"
+                                subtitle={
+                                    <div className="mt-2 text-sm text-gray-400 font-mono">
+                                        Cadastrado em {new Date().getFullYear()}
+                                    </div>
+                                }
+                                status="ok"
+                                actionIcon={<Trash2 size={18} />}
+                                onAction={() => handleDeleteVehicle(vehicle.id, vehicle.model)}
+                            />
+                        </div>
+                    ))}
 
-                        {vehicles.length === 0 && (
-                            <div className="col-span-full py-12 text-center border-2 border-dashed border-gray-200 rounded-xl">
-                                <p className="text-gray-400 text-lg">Este cliente ainda não possui veículos cadastrados.</p>
-                            </div>
-                        )}
-                    </div>
+                    {vehicles.length === 0 && (
+                        <div className="col-span-full py-12 text-center border-2 border-dashed border-gray-200 rounded-xl">
+                            <p className="text-gray-400 text-lg">Este cliente ainda não possui veículos cadastrados.</p>
+                        </div>
+                    )}
+                </div>
 
             </main>
         </div>
