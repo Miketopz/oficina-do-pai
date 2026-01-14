@@ -1,197 +1,235 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation'; // Use navigation for App Router
 import { createClient } from '@/lib/supabase';
+import { Header } from '@/components/features/Header';
+import { VehicleCard } from '@/components/features/VehicleCard';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Car, Plus, Trash2, User } from 'lucide-react';
-import Link from 'next/link';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Plus, User, Phone, Car, ArrowLeft, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { formatPlate } from '@/lib/utils';
+import { maintenanceService } from '@/services/maintenanceService';
 
-interface Client {
-    id: string;
-    name: string;
-    phone: string | null;
-}
-
-interface Vehicle {
-    id: string;
-    plate: string;
-    model: string;
-}
-
-export default function ClientProfilePage() {
-    const params = useParams();
+export default function ClientProfilePaage({ params }: { params: { id: string } }) {
     const router = useRouter();
-    const id = params.id as string;
     const supabase = createClient();
-
-    const [client, setClient] = useState<Client | null>(null);
-    const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+    const [client, setClient] = useState<any>(null);
+    const [vehicles, setVehicles] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // New Vehicle Form State
+    const [newPlate, setNewPlate] = useState('');
+    const [newModel, setNewModel] = useState('');
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [addingVehicle, setAddingVehicle] = useState(false);
+
     useEffect(() => {
-        loadData();
-    }, [id]);
+        fetchData();
+    }, [params.id]);
 
-    const loadData = async () => {
+    const fetchData = async () => {
         setLoading(true);
-        // Fetch Client
-        const { data: clientData, error: clientError } = await supabase
-            .from('clients')
-            .select('*')
-            .eq('id', id)
-            .single();
+        try {
+            // Fetch Client
+            const { data: clientData, error: clientError } = await supabase
+                .from('clients')
+                .select('*')
+                .eq('id', params.id)
+                .single();
 
-        if (clientError) {
-            console.error(clientError);
-            alert('Erro ao carregar cliente.');
-            router.push('/');
-            return;
-        }
+            if (clientError) throw clientError;
+            setClient(clientData);
 
-        setClient(clientData);
+            // Fetch Vehicles
+            const { data: vehicleData, error: vehicleError } = await supabase
+                .from('vehicles')
+                .select('*')
+                .eq('client_id', params.id)
+                .order('model');
 
-        // Fetch Vehicles
-        const { data: vehicleData } = await supabase
-            .from('vehicles')
-            .select('*')
-            .eq('client_id', id)
-            .order('model');
+            if (vehicleError) throw vehicleError;
+            setVehicles(vehicleData || []);
 
-        if (vehicleData) {
-            setVehicles(vehicleData);
-        }
-
-        setLoading(false);
-    };
-
-    const handleDeleteVehicle = async (vehicleId: string) => {
-        if (!confirm('Tem certeza que deseja excluir este veículo? Todo o histórico de manutenção dele será apagado permanentemente.')) return;
-
-        const { error } = await supabase
-            .from('vehicles')
-            .delete()
-            .eq('id', vehicleId);
-
-        if (error) {
-            alert('Erro ao excluir veículo.');
+        } catch (error) {
             console.error(error);
-        } else {
-            loadData(); // Reload list
+            toast.error("Erro ao carregar dados do cliente.");
+        } finally {
+            setLoading(false);
         }
     };
 
-    const handleDeleteClient = async () => {
-        if (!confirm('ATENÇÃO: Tem certeza que deseja excluir ESTE CLIENTE? \n\nIsso apagará TODOS os veículos e TODAS as manutenções vinculadas a ele.\n\nEsta ação não pode ser desfeita.')) return;
+    const handleAddVehicle = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setAddingVehicle(true);
+        try {
+            // 1. Check if plate exists globally
+            const { data: existing } = await supabase
+                .from('vehicles')
+                .select('id, client_id, clients(name)')
+                .eq('plate', newPlate)
+                .maybeSingle();
 
-        // Verify cascading delete in DB or do manual delete?
-        // Schema says: vehicle references client on delete cascade. So deleting client should wipe vehicles. 
-        // Vehicle references maintenance on delete cascade. So wiping vehicle wipes maintenace.
-        // It should be safe to just delete client.
+            if (existing) {
+                if (existing.client_id !== params.id) {
+                    // @ts-ignore
+                    toast.error(`Placa já pertence a ${existing.clients?.name}.`);
+                    return;
+                } else {
+                    toast.info("Veículo já está cadastrado para este cliente.");
+                    setIsDialogOpen(false);
+                    return;
+                }
+            }
 
-        const { error } = await supabase
-            .from('clients')
-            .delete()
-            .eq('id', id);
+            // 2. Insert new vehicle linked to THIS client
+            const { error } = await supabase.from('vehicles').insert({
+                client_id: params.id,
+                plate: newPlate,
+                model: newModel
+            });
 
-        if (error) {
-            alert('Erro ao excluir cliente.');
+            if (error) throw error;
+
+            toast.success("Veículo adicionado!");
+            setNewPlate('');
+            setNewModel('');
+            setIsDialogOpen(false);
+            fetchData(); // Reload list
+
+        } catch (error) {
             console.error(error);
-        } else {
-            alert('Cliente excluído com sucesso.');
-            router.push('/');
+            toast.error("Erro ao adicionar veículo.");
+        } finally {
+            setAddingVehicle(false);
         }
     };
 
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-                <div className="text-xl font-bold text-gray-500 animate-pulse">Carregando Perfil...</div>
-            </div>
-        );
-    }
+    const handleDeleteVehicle = async (vehicleId: string, model: string) => {
+        if (confirm(`Remover ${model} da frota do cliente?`)) {
+            try {
+                // Using service to handle constraints if any (though currently it's a simple delete)
+                await maintenanceService.deleteVehicle(vehicleId);
+                toast.success("Veículo removido.");
+                fetchData();
+            } catch (error) {
+                toast.error("Erro ao remover veículo.");
+            }
+        }
+    };
 
-    if (!client) return null;
+    if (loading) return <div className="min-h-screen flex items-center justify-center">Carregando perfil...</div>;
+    if (!client) return <div className="min-h-screen flex items-center justify-center">Cliente não encontrado.</div>;
 
     return (
-        <div className="min-h-screen bg-gray-50 p-4 pb-20">
-            <div className="max-w-4xl mx-auto space-y-6">
+        <div className="min-h-screen bg-gray-50 pb-20">
+            <Header />
 
-                {/* Header / Nav */}
-                <div className="flex items-center gap-4">
-                    <Link href="/">
-                        <Button variant="outline" size="icon">
-                            <ArrowLeft className="h-6 w-6" />
-                        </Button>
-                    </Link>
-                    <h1 className="text-2xl font-bold text-gray-800">Perfil do Cliente</h1>
-                </div>
+            <main className="container mx-auto px-4 py-8">
+                {/* Back Button */}
+                <Button variant="ghost" className="mb-6 pl-0 hover:bg-transparent" onClick={() => router.push('/')}>
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para Dashboard
+                </Button>
 
-                {/* Client Info Card */}
-                <Card className="border-l-4 border-l-blue-600 shadow-sm">
-                    <CardHeader className="flex flex-row justify-between items-center bg-white">
-                        <div className="flex items-center gap-4">
-                            <div className="h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
-                                <User size={32} />
-                            </div>
-                            <div>
-                                <CardTitle className="text-2xl font-bold">{client.name}</CardTitle>
-                                {client.phone && <p className="text-gray-500 text-lg mt-1">{client.phone}</p>}
+                {/* HEADER PROFILE */}
+                <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div className="flex items-center gap-6">
+                        <div className="h-20 w-20 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                            <User size={40} />
+                        </div>
+                        <div>
+                            <h1 className="text-3xl font-black text-gray-900 tracking-tight">{client.name}</h1>
+                            <div className="flex items-center gap-2 text-lg text-gray-500 mt-1 font-medium">
+                                <Phone size={18} />
+                                {client.phone || 'Sem telefone'}
                             </div>
                         </div>
-                        <Button variant="destructive" size="sm" onClick={handleDeleteClient}>
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Excluir Cliente
-                        </Button>
-                    </CardHeader>
-                </Card>
+                    </div>
 
-                {/* Fleet / Vehicles Section */}
-                <div className="flex justify-between items-center mt-8">
-                    <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                        <Car className="h-6 w-6" />
-                        Frota ({vehicles.length})
-                    </h2>
-                    <Link href={`/new?clientId=${client.id}`}>
-                        <Button className="bg-blue-600 hover:bg-blue-700">
-                            <Plus className="mr-2 h-5 w-5" />
-                            Adicionar Carro
-                        </Button>
-                    </Link>
+                    {/* ADD VEHICLE DIALOG */}
+                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button className="h-14 px-8 text-lg font-bold uppercase bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-900/20 rounded-xl">
+                                <Plus className="mr-2" /> Novo Carro
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Adicionar Veículo para {client.name.split(' ')[0]}</DialogTitle>
+                            </DialogHeader>
+                            <form onSubmit={handleAddVehicle} className="space-y-4 pt-4">
+                                <div>
+                                    <label className="text-sm font-bold uppercase text-gray-500">Placa</label>
+                                    <Input
+                                        value={newPlate}
+                                        onChange={e => setNewPlate(formatPlate(e.target.value))}
+                                        placeholder="ABC1234"
+                                        maxLength={7}
+                                        className="text-2xl font-mono uppercase"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-sm font-bold uppercase text-gray-500">Modelo</label>
+                                    <Input
+                                        value={newModel}
+                                        onChange={e => setNewModel(e.target.value)}
+                                        placeholder="Ex: Fiat Uno"
+                                        className="text-lg"
+                                    />
+                                </div>
+                                <Button type="submit" disabled={addingVehicle} className="w-full h-12 text-lg font-bold bg-green-600 hover:bg-green-700">
+                                    {addingVehicle ? 'Salvando...' : 'Adicionar Veículo'}
+                                </Button>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {vehicles.map((v) => (
-                        <Card key={v.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                            <CardContent className="p-6 flex justify-between items-center">
-                                <Link href={`/vehicle/${v.id}`} className="flex-1">
-                                    <h3 className="text-2xl font-bold text-gray-900">{v.plate}</h3>
-                                    <p className="text-gray-500 font-medium">{v.model}</p>
-                                </Link>
-                                <Button
-                                    variant="ghost"
-                                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                    onClick={(e) => {
-                                        e.stopPropagation(); // Prevent navigation
-                                        handleDeleteVehicle(v.id);
-                                    }}
-                                >
-                                    <Trash2 className="h-5 w-5" />
-                                </Button>
-                            </CardContent>
-                        </Card>
+                {/* FLEET LIST */}
+                <h2 className="text-xl font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                    <Car className="text-gray-300" /> Frota do Cliente ({vehicles.length})
+                </h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {vehicles.map(vehicle => (
+                        <div key={vehicle.id} className="relative group">
+                            <VehicleCard
+                                title={vehicle.model}
+                                plate={vehicle.plate}
+                                link={`/vehicle/${vehicle.id}`} // Takes to history page
+                                detail="VER HISTÓRICO"
+                                subtitle={
+                                    <div className="mt-2 text-sm text-gray-400 font-mono">
+                                        Cadastrado em {new Date().getFullYear()}
+                                    </div>
+                                }
+                                status="ok"
+                            />
+                            {/* Delete Action (Optional, strictly for admin) */}
+                            <Button
+                                variant="destructive"
+                                size="icon"
+                                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-20"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    handleDeleteVehicle(vehicle.id, vehicle.model);
+                                }}
+                            >
+                                <Trash2 size={16} />
+                            </Button>
+                        </div>
                     ))}
 
                     {vehicles.length === 0 && (
-                        <div className="col-span-full text-center py-10 bg-white rounded-lg border border-dashed border-gray-300">
-                            <Car className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                            <p className="text-gray-500">Nenhum veículo cadastrado para este cliente.</p>
+                        <div className="col-span-full py-12 text-center border-2 border-dashed border-gray-200 rounded-xl">
+                            <p className="text-gray-400 text-lg">Este cliente ainda não possui veículos cadastrados.</p>
                         </div>
                     )}
                 </div>
 
-            </div>
+            </main>
         </div>
     );
 }

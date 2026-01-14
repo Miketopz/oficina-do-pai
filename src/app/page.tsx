@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Header } from '@/components/features/Header';
 import { VehicleCard } from '@/components/features/VehicleCard';
+import { ClientCard } from '@/components/features/ClientCard';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,7 +16,7 @@ import { maintenanceService } from '@/services/maintenanceService';
 export default function Dashboard() {
     const {
         recentServices,
-        filteredFleet,
+        filteredClients,
         stats,
         searchTerm,
         setSearchTerm,
@@ -69,7 +70,7 @@ export default function Dashboard() {
                             Atividades
                         </TabsTrigger>
                         <TabsTrigger value="fleet" className="flex-1 h-full text-lg font-bold uppercase data-[state=active]:bg-primary data-[state=active]:text-white">
-                            Clientes ({filteredFleet.length})
+                            Clientes ({filteredClients.length})
                         </TabsTrigger>
                     </TabsList>
 
@@ -103,33 +104,16 @@ export default function Dashboard() {
                     {/* TAB 2: CLIENTS/FLEET (Client-Side Filter) */}
                     <TabsContent value="fleet">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {filteredFleet.map(vehicle => (
-                                <VehicleCard
-                                    key={vehicle.id}
-                                    title={vehicle.client.name}
-                                    plate={vehicle.plate}
-                                    link={`/vehicle/${vehicle.id}`}
-                                    detail="CLIENTE"
-                                    subtitle={
-                                        <div className="mt-2 text-muted-foreground">
-                                            <p className="flex items-center gap-2 text-sm font-bold opacity-80 uppercase tracking-wide">
-                                                <Car size={16} /> Veículo
-                                            </p>
-                                            <p className="text-xl font-bold text-gray-100">
-                                                {vehicle.model}
-                                            </p>
-                                        </div>
-                                    }
-                                    actionIcon={<Trash2 size={20} />}
-                                    onAction={async () => {
-                                        if (confirm(`Excluir ${vehicle.model} (${vehicle.plate})?`)) {
-                                            await maintenanceService.deleteVehicle(vehicle.id);
-                                            reloadFleet();
-                                        }
-                                    }}
+                            {filteredClients.map(client => (
+                                <ClientCard
+                                    key={client.id}
+                                    id={client.id}
+                                    name={client.name}
+                                    phone={client.phone}
+                                    vehicleCount={client.vehicleCount}
                                 />
                             ))}
-                            {filteredFleet.length === 0 && <p className="text-center text-muted-foreground py-10 text-xl">Nenhum veículo encontrado.</p>}
+                            {filteredClients.length === 0 && <p className="text-center text-muted-foreground py-10 text-xl">Nenhum cliente encontrado.</p>}
                         </div>
                     </TabsContent>
                 </Tabs>

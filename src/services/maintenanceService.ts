@@ -1,6 +1,6 @@
 
 import { createClient } from '@/lib/supabase';
-import { Service, Vehicle } from '@/types';
+import { Service, Vehicle, ClientWithFleet } from '@/types';
 
 // Helper to deduplicate services (Business Logic)
 const deduplicateServices = (services: Service[]) => {
@@ -51,6 +51,29 @@ export const maintenanceService = {
         }));
 
         return deduplicateServices(formatted);
+    },
+
+    async getClientsWithFleet(): Promise<ClientWithFleet[]> {
+        const supabase = createClient();
+        const { data: clients, error } = await supabase
+            .from('clients')
+            .select(`
+                id, name, phone,
+                vehicles (count)
+            `)
+            .order('name');
+
+        if (error) {
+            console.error('Error fetching clients:', error);
+            throw error;
+        }
+
+        return clients.map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            phone: c.phone,
+            vehicleCount: c.vehicles ? c.vehicles[0].count : 0
+        }));
     },
 
     async getFleet(): Promise<Vehicle[]> {

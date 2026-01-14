@@ -156,9 +156,30 @@ function NewServiceForm() {
             const { data: existingVehicle } = await supabase.from('vehicles').select('id').eq('plate', data.vehiclePlate).maybeSingle();
 
             if (existingVehicle) {
+                // BUSCA SE O CLIENTE DIGITADO JÁ EXISTE (pelo telefone ou nome)
+                // (Already resolved above as clientId)
+
+                // TRAVA DE SEGURANÇA:
+                // Check if we have a clientId (resolved from form) and if it matches the vehicle's owner
+                if (clientId) {
+                    // We need to fetch the existing vehicle's owner to compare
+                    const { data: currentOwnerCheck } = await supabase
+                        .from('vehicles')
+                        .select('client_id, clients(name)')
+                        .eq('id', existingVehicle.id)
+                        .single();
+
+                    if (currentOwnerCheck && currentOwnerCheck.client_id !== clientId) {
+                        // @ts-ignore
+                        const ownerName = currentOwnerCheck.clients?.name || 'Outro Cliente';
+                        toast.error(`Esta placa já pertence ao cliente ${ownerName}. Não é possível registrar para outra pessoa.`);
+                        setLoading(false);
+                        return; // ABORT
+                    }
+                }
+
                 vehicleId = existingVehicle.id;
-                // Upsert/Update Owner Logic
-                await supabase.from('vehicles').update({ client_id: clientId }).eq('id', vehicleId);
+                // REMOVED: await supabase.from('vehicles').update({ client_id: clientId }).eq('id', vehicleId);
             } else {
                 const { data: newVehicle, error } = await supabase.from('vehicles').insert({ client_id: clientId, plate: data.vehiclePlate, model: data.vehicleModel }).select().single();
                 if (error) throw error;

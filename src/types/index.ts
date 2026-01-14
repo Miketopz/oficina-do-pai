@@ -5,6 +5,10 @@ export type Client = {
     phone?: string;
 };
 
+export type ClientWithFleet = Client & {
+    vehicleCount: number;
+};
+
 export type Vehicle = {
     id: string;
     plate: string;
