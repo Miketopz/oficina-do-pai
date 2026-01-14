@@ -9,8 +9,9 @@ import { createClient } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ChevronRight, CheckCircle2, AlertCircle, Save, User, Car, Wrench, ArrowRight, ArrowLeft } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { CheckCircle2, User, Car, Wrench, ArrowRight } from 'lucide-react';
+import { cn, formatPhone, formatPlate } from '@/lib/utils';
+import { toast } from 'sonner';
 
 // Validation Schema
 const formSchema = z.object({
@@ -35,7 +36,6 @@ function NewServiceForm() {
     const supabase = createClient();
     const [loading, setLoading] = useState(false);
     const searchParams = useSearchParams();
-    const [generalError, setGeneralError] = useState<string | null>(null);
     const [currentStep, setCurrentStep] = useState(1);
     const preFilledClientId = searchParams.get('clientId');
 
@@ -58,6 +58,17 @@ function NewServiceForm() {
         }
     }, [preFilledClientId, setValue, supabase]);
 
+    // --- MASK HANDLERS ---
+    const handlePlateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const formatted = formatPlate(e.target.value);
+        setValue('vehiclePlate', formatted);
+    };
+
+    const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const formatted = formatPhone(e.target.value);
+        setValue('clientPhone', formatted);
+    };
+
     const handlePlateBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
         const plate = e.target.value.toUpperCase();
         if (plate.length < 5) return;
@@ -73,7 +84,7 @@ function NewServiceForm() {
             .maybeSingle();
 
         if (vehicleData) {
-            console.log('Found vehicle:', vehicleData);
+            toast.info("Veículo encontrado! Dados carregados.");
             setValue('vehicleModel', vehicleData.model);
             if (vehicleData.client) {
                 // @ts-ignore
@@ -107,108 +118,76 @@ function NewServiceForm() {
 
     const onSubmit = async (data: FormData) => {
         setLoading(true);
-        setGeneralError(null);
 
         try {
-            // 1. Resolve Client
-            // 1. Resolve Client (Hardened Logic)
+            // 1. Resolve Client (Robust Deduplication)
             let clientId;
             const finalPhone = data.clientPhone ? data.clientPhone.trim() : null;
             const finalName = data.clientName.trim();
 
-            // A. Try to find by PHONE first (Unique ID ideally)
+            // A. Search by PHONE
             if (finalPhone) {
-                const { data: phoneMatch } = await supabase
-                    .from('clients')
-                    .select('id')
-                    .eq('phone', finalPhone)
-                    .maybeSingle();
-
+                const { data: phoneMatch } = await supabase.from('clients').select('id').eq('phone', finalPhone).maybeSingle();
                 if (phoneMatch) {
-                    console.log('Cliente encontrado por telefone:', finalPhone);
+                    console.log('Cliente encontrado por telefone');
                     clientId = phoneMatch.id;
                 }
             }
 
-            // B. If not found by phone, try NAME (Case Insensitive)
+            // B. Search by NAME (if no phone match)
             if (!clientId) {
-                const { data: nameMatch } = await supabase
-                    .from('clients')
-                    .select('id')
-                    .ilike('name', finalName)
-                    .maybeSingle();
-
+                const { data: nameMatch } = await supabase.from('clients').select('id').ilike('name', finalName).maybeSingle();
                 if (nameMatch) {
-                    console.log('Cliente encontrado por nome:', finalName);
+                    console.log('Cliente encontrado por nome');
                     clientId = nameMatch.id;
                 }
             }
 
-            // C. Create NEW Client if absolutely no match found
+            // C. Create NEW
             if (!clientId) {
-                console.log('Criando novo cliente:', finalName);
-                const { data: newClient, error: createClientError } = await supabase
-                    .from('clients')
-                    .insert({ name: finalName, phone: finalPhone })
-                    .select()
-                    .single();
-
-                if (createClientError) throw new Error(`Erro ao salvar cliente: ${createClientError.message}`);
+                console.log('Criando novo cliente');
+                const { data: newClient, error } = await supabase.from('clients').insert({ name: finalName, phone: finalPhone }).select().single();
+                if (error) throw error;
                 clientId = newClient.id;
             }
 
             // 2. Resolve Vehicle
             let vehicleId;
-            const { data: existingVehicle } = await supabase
-                .from('vehicles')
-                .select('id')
-                .eq('plate', data.vehiclePlate.toUpperCase().trim())
-                .maybeSingle();
+            const { data: existingVehicle } = await supabase.from('vehicles').select('id').eq('plate', data.vehiclePlate).maybeSingle();
 
             if (existingVehicle) {
                 vehicleId = existingVehicle.id;
-                // UPDATE OWNER: If the user specified a client that is DIFFERENT from the current owner, 
-                // this ensures the vehicle is transferred to the new client (Last write wins).
+                // Upsert/Update Owner Logic
                 await supabase.from('vehicles').update({ client_id: clientId }).eq('id', vehicleId);
             } else {
-                const { data: newVehicle, error: vehicleError } = await supabase
-                    .from('vehicles')
-                    .insert({
-                        client_id: clientId,
-                        plate: data.vehiclePlate.toUpperCase().trim(),
-                        model: data.vehicleModel
-                    })
-                    .select()
-                    .single();
-
-                if (vehicleError) throw new Error(`Erro ao salvar veículo: ${vehicleError.message}`);
+                const { data: newVehicle, error } = await supabase.from('vehicles').insert({ client_id: clientId, plate: data.vehiclePlate, model: data.vehicleModel }).select().single();
+                if (error) throw error;
                 vehicleId = newVehicle.id;
             }
 
             // 3. Create Record
-            const { error: recordError } = await supabase
-                .from('maintenance_records')
-                .insert({
-                    vehicle_id: vehicleId,
-                    date: data.date,
-                    km: data.km,
-                    oil: data.oil,
-                    filter_oil: data.filterOil,
-                    filter_air: data.filterAir,
-                    filter_fuel: data.filterFuel,
-                    filter_cabin: data.filterCabin,
-                    notes: data.notes
-                });
+            const { error: recordError } = await supabase.from('maintenance_records').insert({
+                vehicle_id: vehicleId,
+                date: data.date,
+                km: data.km,
+                oil: data.oil,
+                filter_oil: data.filterOil,
+                filter_air: data.filterAir,
+                filter_fuel: data.filterFuel,
+                filter_cabin: data.filterCabin,
+                notes: data.notes
+            });
 
-            if (recordError) throw new Error(`Erro ao salvar serviço: ${recordError.message}`);
+            if (recordError) throw recordError;
 
-            alert('Serviço registrado com sucesso!');
+            // Success Feedback
+            toast.success("Serviço registrado com sucesso! 🚀");
             router.push('/');
             router.refresh();
 
         } catch (err: any) {
             console.error(err);
-            setGeneralError(err.message || 'Ocorreu um erro ao salvar.');
+            toast.error(err.message || 'Erro ao salvar.');
         } finally {
             setLoading(false);
         }
@@ -239,8 +218,6 @@ function NewServiceForm() {
 
                 <form className="space-y-6">
 
-                    {/* STEPS UI ... */}
-
                     {currentStep === 1 && (
                         <div className="space-y-6 animate-in slide-in-from-right fade-in duration-300">
                             <Card className="border-2 border-blue-100 shadow-md">
@@ -254,8 +231,16 @@ function NewServiceForm() {
                                         <label className="text-lg font-bold text-gray-700 mb-2 block uppercase">Placa do Carro</label>
                                         <Input
                                             {...register('vehiclePlate')}
-                                            onBlur={handlePlateBlur}
+                                            onChange={(e) => {
+                                                handlePlateChange(e);
+                                                register('vehiclePlate').onChange(e);
+                                            }}
+                                            onBlur={(e) => {
+                                                handlePlateBlur(e);
+                                                register('vehiclePlate').onBlur(e);
+                                            }}
                                             placeholder="ABC1234"
+                                            maxLength={7}
                                             className="h-16 text-3xl font-mono uppercase tracking-widest border-2 border-gray-300 focus:border-blue-500"
                                         />
                                         {errors.vehiclePlate && <p className="text-red-600 font-bold mt-1 text-lg">{errors.vehiclePlate.message}</p>}
@@ -274,7 +259,16 @@ function NewServiceForm() {
                                 <CardContent className="space-y-4">
                                     <Input {...register('clientName')} className="h-14 text-xl" placeholder="Nome Completo" />
                                     {errors.clientName && <p className="text-red-600">{errors.clientName.message}</p>}
-                                    <Input {...register('clientPhone')} className="h-14 text-xl" placeholder="Telefone" />
+                                    <Input
+                                        {...register('clientPhone')}
+                                        onChange={(e) => {
+                                            handlePhoneChange(e);
+                                            register('clientPhone').onChange(e);
+                                        }}
+                                        className="h-14 text-xl"
+                                        maxLength={15}
+                                        placeholder="Telefone (11) 99999-9999"
+                                    />
                                 </CardContent>
                             </Card>
 
@@ -325,7 +319,7 @@ function NewServiceForm() {
                                         <p><strong>Cliente:</strong> {watchedData.clientName}</p>
                                         <p><strong>Óleo:</strong> {watchedData.oil}</p>
                                     </div>
-                                    {generalError && <p className="text-red-600 font-bold">{generalError}</p>}
+
                                 </CardContent>
                             </Card>
                             <div className="flex gap-4">

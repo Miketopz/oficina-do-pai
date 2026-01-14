@@ -10,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Plus, Calendar, User, Car, Wrench, Edit, Trash2, ArrowRight } from 'lucide-react';
+import { Search, Plus, Car, Trash2 } from 'lucide-react';
 
 // Types
 type Service = {
@@ -45,24 +45,33 @@ export default function Dashboard() {
     const fetchData = async () => {
         setLoading(true);
         // 1. Fetch Recent Services
-        const { data: services } = await supabase
+        const { data: services, error: servicesError } = await supabase
             .from('maintenance_records')
             .select(`
                 id, date, km, oil,
-                vehicle:vehicles (id, plate, model, client:clients(id, name))
+                vehicle:vehicles!inner (id, plate, model, client:clients!inner(id, name))
             `)
             .order('date', { ascending: false })
             .limit(20);
 
+        if (servicesError) console.error(servicesError);
+
         if (services) {
-            // @ts-ignore
-            const formatted = services.map((s: any) => ({
+            // Transform Supabase Result to Service Type
+            const formatted: Service[] = services.map((s: any) => ({
                 id: s.id,
                 date: s.date,
                 km: s.km,
                 oil: s.oil,
-                vehicle: s.vehicle,
-                client: s.vehicle.client
+                vehicle: {
+                    id: s.vehicle.id,
+                    plate: s.vehicle.plate,
+                    model: s.vehicle.model
+                },
+                client: {
+                    id: s.vehicle.client.id,
+                    name: s.vehicle.client.name
+                }
             }));
 
             // Deduplicate: Keep only the FIRST occurrence (Latest date) for each vehicle
@@ -80,12 +89,20 @@ export default function Dashboard() {
         // 2. Fetch Fleet (All Vehicles)
         const { data: vehicles } = await supabase
             .from('vehicles')
-            .select(`id, plate, model, client:clients(id, name)`)
+            .select(`id, plate, model, client:clients!inner(id, name)`)
             .order('model');
 
         if (vehicles) {
-            // @ts-ignore
-            setFleet(vehicles);
+            const formattedFleet: Vehicle[] = vehicles.map((v: any) => ({
+                id: v.id,
+                plate: v.plate,
+                model: v.model,
+                client: {
+                    id: v.client.id,
+                    name: v.client.name
+                }
+            }));
+            setFleet(formattedFleet);
         }
         setLoading(false);
     };
