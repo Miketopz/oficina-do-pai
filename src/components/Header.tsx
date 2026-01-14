@@ -21,7 +21,7 @@ export function Header() {
             <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                 <Link href="/" className="flex items-center gap-2 font-bold text-xl text-primary-700">
                     <Wrench className="h-6 w-6" />
-                    <span>Filtros Carro</span>
+                    <span>OFICINA V4.1 (ATUALIZADO)</span>
                 </Link>
                 <div className="flex items-center gap-4">
                     <Link href="/new">
