@@ -13,18 +13,37 @@ interface VehicleCardProps {
     link: string;
     actionIcon?: React.ReactNode;
     onAction?: () => void;
+    status?: 'danger' | 'warning' | 'ok'; // New prop
 }
 
-export function VehicleCard({ title, plate, subtitle, detail, link, actionIcon, onAction }: VehicleCardProps) {
+export function VehicleCard({ title, plate, subtitle, detail, link, actionIcon, onAction, status }: VehicleCardProps) {
+    // Status Styles Mapping
+    const borderClass = status === 'danger' ? 'border-l-4 border-l-red-500' :
+        status === 'warning' ? 'border-l-4 border-l-yellow-500' :
+            status === 'ok' ? 'border-l-4 border-l-green-500' : '';
+
+    const badgeClass = status === 'danger' ? 'bg-red-100 text-red-700 border-red-200' :
+        status === 'warning' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+            'bg-green-100 text-green-700 border-green-200';
+
+    const statusLabel = status === 'danger' ? 'VENCIDO' : status === 'warning' ? 'PRÓXIMO' : 'EM DIA';
+
     return (
-        <Card className="group relative overflow-hidden bg-card border border-border shadow-md hover:border-primary transition-all duration-300 cursor-pointer">
+        <Card className={`group relative overflow-hidden bg-card border border-border shadow-md hover:border-primary transition-all duration-300 cursor-pointer ${borderClass}`}>
             {/* 'Metal Plate' Effect Header */}
             <div className="bg-secondary p-3 flex justify-between items-center border-b border-border">
                 <div className="bg-white text-black font-black font-mono text-lg px-2 py-1 rounded border-2 border-black tracking-widest uppercase flex items-center shadow-inner">
                     <div className="w-4 h-2 bg-blue-700 mr-2"></div>
                     {plate}
                 </div>
-                {detail && <span className="text-xs font-bold text-muted-foreground uppercase">{detail}</span>}
+                <div className="flex flex-col items-end">
+                    {detail && <span className="text-xs font-bold text-muted-foreground uppercase">{detail}</span>}
+                    {status && (
+                        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border mt-1 ${badgeClass}`}>
+                            {statusLabel}
+                        </span>
+                    )}
+                </div>
             </div>
 
             <CardContent className="p-4 relative z-10">

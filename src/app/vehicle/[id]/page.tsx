@@ -5,8 +5,9 @@ import { createClient } from '@/lib/supabase';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, MessageCircle, Trash2 } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Trash2, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
+import { cn, getServiceStatus, statusStyles } from '@/lib/utils';
 
 export default function VehiclePage({ params }: { params: { id: string } }) {
     const [vehicle, setVehicle] = useState<any>(null);
@@ -90,6 +91,9 @@ export default function VehiclePage({ params }: { params: { id: string } }) {
     if (loading) return <div className="p-8 text-center">Carregando histórico...</div>;
     if (!vehicle) return <div className="p-8 text-center text-red-500">Veículo não encontrado.</div>;
 
+    const lastRecord = records[0];
+    const status = lastRecord ? getServiceStatus(lastRecord.date, lastRecord.km) : 'ok';
+
     return (
         <div className="min-h-screen bg-gray-50 pb-8">
             <Header />
@@ -114,6 +118,18 @@ export default function VehiclePage({ params }: { params: { id: string } }) {
                         </div>
                     </div>
                 </div>
+
+                {/* STATUS BANNER */}
+                {status !== 'ok' && (
+                    <div className={cn("mb-6 p-4 rounded-lg border flex items-center gap-3", statusStyles[status])}>
+                        <AlertTriangle className="h-5 w-5" />
+                        <span className="font-medium">
+                            {status === 'danger'
+                                ? "Atenção: Este veículo já ultrapassou o prazo de 6 meses desde a última troca."
+                                : "Aviso: A próxima revisão deste veículo deve ser agendada em breve."}
+                        </span>
+                    </div>
+                )}
 
                 {/* Prediction Card - The Intelligence Layer */}
                 {prediction && (
