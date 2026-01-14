@@ -1,176 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase';
-import { Header } from '@/components/Header';
-import { VehicleCard } from '@/components/VehicleCard';
+import { Header } from '@/components/features/Header';
+import { VehicleCard } from '@/components/features/VehicleCard';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { cn, getServiceStatus } from '@/lib/utils';
-import { Search, Plus, Car, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
-
-// Types
-type Service = {
-    id: string;
-    vehicle: { id: string; plate: string; model: string };
-    client: { id?: string; name: string };
-    date: string;
-    km: number;
-    oil?: string;
-};
-
-type Vehicle = {
-    id: string;
-    plate: string;
-    model: string;
-    client: { id: string; name: string };
-};
+import { StatCard } from '@/components/ui/stat-card';
+import { getServiceStatus } from '@/lib/utils';
+import { Search, Plus, Car, Trash2, Activity, Droplet } from 'lucide-react';
+import { useMaintenanceDashboard } from '@/hooks/useMaintenanceDashboard';
+import { maintenanceService } from '@/services/maintenanceService';
 
 export default function Dashboard() {
-    const supabase = createClient();
-    const router = useRouter();
-
-    const [recentServices, setRecentServices] = useState<Service[]>([]);
-    const [fleet, setFleet] = useState<Vehicle[]>([]);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        fetchInitialData();
-    }, []);
-
-    const fetchInitialData = async () => {
-        setLoading(true);
-        await Promise.all([fetchRecentServices(), fetchFleet()]);
-        setLoading(false);
-    };
-
-    const fetchRecentServices = async () => {
-        const { data: services, error } = await supabase
-            .from('maintenance_records')
-            .select(`
-                id, date, km, oil,
-                vehicle:vehicles!inner (id, plate, model, client:clients!inner(id, name))
-            `)
-            .order('date', { ascending: false })
-            .limit(20);
-
-        if (error) {
-            console.error(error);
-            return;
-        }
-
-        if (services) {
-            const formatted: Service[] = services.map((s: any) => ({
-                id: s.id,
-                date: s.date,
-                km: s.km,
-                oil: s.oil,
-                vehicle: {
-                    id: s.vehicle.id,
-                    plate: s.vehicle.plate,
-                    model: s.vehicle.model
-                },
-                client: {
-                    id: s.vehicle.client.id,
-                    name: s.vehicle.client.name
-                }
-            }));
-            setRecentServices(deduplicateServices(formatted));
-        }
-    };
-
-    const fetchFleet = async () => {
-        const { data: vehicles } = await supabase
-            .from('vehicles')
-            .select(`id, plate, model, client:clients!inner(id, name)`)
-            .order('model');
-
-        if (vehicles) {
-            const formattedFleet: Vehicle[] = vehicles.map((v: any) => ({
-                id: v.id,
-                plate: v.plate,
-                model: v.model,
-                client: {
-                    id: v.client.id,
-                    name: v.client.name
-                }
-            }));
-            setFleet(formattedFleet);
-        }
-    };
-
-    const deduplicateServices = (services: Service[]) => {
-        const uniqueServices: Service[] = [];
-        const seenVehicles = new Set();
-        for (const s of services) {
-            if (!seenVehicles.has(s.vehicle.id)) {
-                seenVehicles.add(s.vehicle.id);
-                uniqueServices.push(s);
-            }
-        }
-        return uniqueServices;
-    };
-
-    // --- Backend Search Logic ---
-    const handleSearch = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (!searchTerm.trim()) {
-            setLoading(true);
-            await fetchRecentServices();
-            setLoading(false);
-            return;
-        }
-
-        setLoading(true);
-        try {
-            // Call Supabase RPC
-            const { data, error } = await supabase
-                .rpc('search_maintenance', { search_query: searchTerm });
-
-            if (error) throw error;
-
-            if (data) {
-                const formatted: Service[] = data.map((item: any) => ({
-                    id: item.id,
-                    date: item.date,
-                    km: item.km,
-                    oil: null, // RPC doesn't return oil/filters yet, optional
-                    vehicle: {
-                        id: item.vehicle_id,
-                        plate: item.plate,
-                        model: item.model
-                    },
-                    client: {
-                        id: item.client_id,
-                        name: item.client_name
-                    },
-                }));
-                // We show all matches, maybe no dedupe needed for search results?
-                // Or dedupe if user wants to see "Last service of found cars"
-                // Usually search results list all history matching.
-                // Let's Keep all history for search or dedupe?
-                // The dashboard usually shows "Recent Activity". If I search "Gol", I might want to see history.
-                // But for consistency with the view, let's just show them.
-                setRecentServices(formatted);
-            }
-        } catch (error) {
-            console.error('Erro na busca:', error);
-            toast.error('Erro ao realizar a busca.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const filteredFleet = fleet.filter(v =>
-        v.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        v.client.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const {
+        recentServices,
+        filteredFleet,
+        stats,
+        searchTerm,
+        setSearchTerm,
+        handleSearch,
+        reloadFleet
+    } = useMaintenanceDashboard();
 
     return (
         <div className="min-h-screen bg-background text-foreground pb-20">
@@ -196,13 +47,29 @@ export default function Dashboard() {
                     </Link>
                 </div>
 
+                {/* ANALYTICS SECTION */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    <StatCard
+                        title="Trocas (30 dias)"
+                        value={stats.monthly}
+                        icon={Activity}
+                        description="Manutenções recentes"
+                    />
+                    <StatCard
+                        title="Óleo + Usado"
+                        value={stats.topOil}
+                        icon={Droplet}
+                        description="Preferência da oficina"
+                    />
+                </div>
+
                 <Tabs defaultValue="activities" className="space-y-6">
                     <TabsList className="bg-card border border-border h-16 p-2 rounded-xl">
                         <TabsTrigger value="activities" className="flex-1 h-full text-lg font-bold uppercase data-[state=active]:bg-primary data-[state=active]:text-white">
                             Atividades
                         </TabsTrigger>
                         <TabsTrigger value="fleet" className="flex-1 h-full text-lg font-bold uppercase data-[state=active]:bg-primary data-[state=active]:text-white">
-                            Clientes ({fleet.length})
+                            Clientes ({filteredFleet.length})
                         </TabsTrigger>
                     </TabsList>
 
@@ -256,8 +123,8 @@ export default function Dashboard() {
                                     actionIcon={<Trash2 size={20} />}
                                     onAction={async () => {
                                         if (confirm(`Excluir ${vehicle.model} (${vehicle.plate})?`)) {
-                                            await supabase.from('vehicles').delete().eq('id', vehicle.id);
-                                            fetchFleet(); // Reload Fleet
+                                            await maintenanceService.deleteVehicle(vehicle.id);
+                                            reloadFleet();
                                         }
                                     }}
                                 />

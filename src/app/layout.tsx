@@ -23,7 +23,7 @@ export default function RootLayout({
                     {children}
                     <Toaster richColors position="top-center" />
                     <footer className="text-center text-xs text-gray-500 py-4 opacity-50">
-                        V4.1 - SISTEMA ATUALIZADO (14/01)
+                        <p className="text-xs text-muted-foreground">V5.1 - GESTÃO INTELIGENTE (14/01)</p>
                     </footer>
                 </div>
             </body>

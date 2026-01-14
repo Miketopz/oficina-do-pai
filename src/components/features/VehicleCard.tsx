@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { ArrowRight } from 'lucide-react';
 
 interface VehicleCardProps {
@@ -22,9 +23,6 @@ export function VehicleCard({ title, plate, subtitle, detail, link, actionIcon, 
         status === 'warning' ? 'border-l-4 border-l-yellow-500' :
             status === 'ok' ? 'border-l-4 border-l-green-500' : '';
 
-    const badgeClass = status === 'danger' ? 'bg-red-100 text-red-700 border-red-200' :
-        status === 'warning' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-            'bg-green-100 text-green-700 border-green-200';
 
     const statusLabel = status === 'danger' ? 'VENCIDO' : status === 'warning' ? 'PRÓXIMO' : 'EM DIA';
 
@@ -39,9 +37,9 @@ export function VehicleCard({ title, plate, subtitle, detail, link, actionIcon, 
                 <div className="flex flex-col items-end">
                     {detail && <span className="text-xs font-bold text-muted-foreground uppercase">{detail}</span>}
                     {status && (
-                        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border mt-1 ${badgeClass}`}>
+                        <Badge status={status}>
                             {statusLabel}
-                        </span>
+                        </Badge>
                     )}
                 </div>
             </div>
