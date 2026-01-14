@@ -73,17 +73,21 @@ function NewServiceForm() {
         const plate = e.target.value.toUpperCase();
         if (plate.length < 5) return;
 
-        console.log('Checking plate:', plate);
         const { data: vehicleData } = await supabase
             .from('vehicles')
-            .select(`
-                model,
-                client:clients (name, phone)
-            `)
+            .select(`model, client_id, client:clients (name, phone)`)
             .eq('plate', plate)
             .maybeSingle();
 
         if (vehicleData) {
+            // Se já temos um cliente pré-selecionado (vimos do perfil dele) e a placa é de OUTRO
+            if (preFilledClientId && vehicleData.client_id !== preFilledClientId) {
+                // @ts-ignore
+                toast.error(`Atenção! Esta placa pertence ao cliente ${vehicleData.client?.name}.`);
+                setValue('vehiclePlate', ''); // Limpa para evitar erro
+                return;
+            }
+
             toast.info("Veículo encontrado! Dados carregados.");
             setValue('vehicleModel', vehicleData.model);
             if (vehicleData.client) {
@@ -120,67 +124,62 @@ function NewServiceForm() {
         setLoading(true);
 
         try {
-            // 1. Resolve Client (Robust Deduplication)
-            let clientId;
-            const finalPhone = data.clientPhone ? data.clientPhone.trim() : null;
-            const finalName = data.clientName.trim();
-
-            // A. Search by PHONE
-            if (finalPhone) {
-                const { data: phoneMatch } = await supabase.from('clients').select('id').eq('phone', finalPhone).maybeSingle();
-                if (phoneMatch) {
-                    console.log('Cliente encontrado por telefone');
-                    clientId = phoneMatch.id;
-                }
-            }
-
-            // B. Search by NAME (if no phone match)
-            if (!clientId) {
-                const { data: nameMatch } = await supabase.from('clients').select('id').ilike('name', finalName).maybeSingle();
-                if (nameMatch) {
-                    console.log('Cliente encontrado por nome');
-                    clientId = nameMatch.id;
-                }
-            }
-
-            // C. Create NEW
-            if (!clientId) {
-                console.log('Criando novo cliente');
-                const { data: newClient, error } = await supabase.from('clients').insert({ name: finalName, phone: finalPhone }).select().single();
-                if (error) throw error;
-                clientId = newClient.id;
-            }
-
-            // 2. Resolve Vehicle
+            // 1. Resolve Vehicle FIRST (Check ownership)
             let vehicleId;
-            const { data: existingVehicle } = await supabase.from('vehicles').select('id').eq('plate', data.vehiclePlate).maybeSingle();
+            let existingOwnerId = null;
+
+            const { data: existingVehicle } = await supabase
+                .from('vehicles')
+                .select('id, client_id, clients(name)')
+                .eq('plate', data.vehiclePlate)
+                .maybeSingle();
 
             if (existingVehicle) {
-                // BUSCA SE O CLIENTE DIGITADO JÁ EXISTE (pelo telefone ou nome)
-                // (Already resolved above as clientId)
+                vehicleId = existingVehicle.id;
+                existingOwnerId = existingVehicle.client_id;
+            }
 
-                // TRAVA DE SEGURANÇA:
-                // Check if we have a clientId (resolved from form) and if it matches the vehicle's owner
-                if (clientId) {
-                    // We need to fetch the existing vehicle's owner to compare
-                    const { data: currentOwnerCheck } = await supabase
-                        .from('vehicles')
-                        .select('client_id, clients(name)')
-                        .eq('id', existingVehicle.id)
-                        .single();
+            // 2. Resolve Client
+            let clientId = preFilledClientId || existingOwnerId;
+            // If vehicle exists, we PREFER the existing owner ID unless explicit change (but we block explicit change below)
 
-                    if (currentOwnerCheck && currentOwnerCheck.client_id !== clientId) {
-                        // @ts-ignore
-                        const ownerName = currentOwnerCheck.clients?.name || 'Outro Cliente';
-                        toast.error(`Esta placa já pertence ao cliente ${ownerName}. Não é possível registrar para outra pessoa.`);
-                        setLoading(false);
-                        return; // ABORT
-                    }
+            if (!clientId) {
+                // Only search/create if we don't know the owner yet
+                const finalPhone = data.clientPhone ? data.clientPhone.trim() : null;
+                const finalName = data.clientName.trim();
+
+                // A. Search by PHONE
+                if (finalPhone) {
+                    const { data: phoneMatch } = await supabase.from('clients').select('id').eq('phone', finalPhone).maybeSingle();
+                    if (phoneMatch) clientId = phoneMatch.id;
                 }
 
-                vehicleId = existingVehicle.id;
-                // REMOVED: await supabase.from('vehicles').update({ client_id: clientId }).eq('id', vehicleId);
+                // B. Search by NAME
+                if (!clientId) {
+                    const { data: nameMatch } = await supabase.from('clients').select('id').ilike('name', finalName).maybeSingle();
+                    if (nameMatch) clientId = nameMatch.id;
+                }
+
+                // C. Create NEW CLIENT (Only if truly new)
+                if (!clientId) {
+                    const { data: newClient, error } = await supabase.from('clients').insert({ name: finalName, phone: finalPhone }).select().single();
+                    if (error) throw error;
+                    clientId = newClient.id;
+                }
+            }
+
+            // 3. Final Safety Check & Vehicle Creation
+            if (existingVehicle) {
+                // Safety Block: If we resolved a clientId different from vehicle owner
+                if (existingOwnerId && clientId !== existingOwnerId) {
+                    // @ts-ignore
+                    const ownerName = existingVehicle.clients?.name || 'Outro Cliente';
+                    toast.error(`Esta placa já pertence a ${ownerName}. Impossível registrar para outra pessoa.`);
+                    setLoading(false);
+                    return;
+                }
             } else {
+                // Create New Vehicle
                 const { data: newVehicle, error } = await supabase.from('vehicles').insert({ client_id: clientId, plate: data.vehiclePlate, model: data.vehicleModel }).select().single();
                 if (error) throw error;
                 vehicleId = newVehicle.id;

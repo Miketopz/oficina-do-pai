@@ -2,9 +2,10 @@
 export type Client = {
     id: string;
     name: string;
-    phone?: string;
+    phone?: string | null;
 };
 
+// Adiciona este tipo para suportar a aba de clientes com frota
 export type ClientWithFleet = Client & {
     vehicleCount: number;
 };
@@ -21,13 +22,6 @@ export type Service = {
     date: string;
     km: number;
     oil?: string;
-    vehicle: {
-        id: string;
-        plate: string;
-        model: string;
-    };
-    client: {
-        id?: string;
-        name: string;
-    };
+    vehicle: { id: string; plate: string; model: string };
+    client: { id?: string; name: string };
 };
