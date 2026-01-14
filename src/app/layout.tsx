@@ -6,7 +6,7 @@ import { Toaster } from 'sonner';
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-    title: "Filtros Carro",
+    title: "Oficina do Pai",
     description: "Histórico de manutenção para loja de filtros automotivos",
     manifest: "/manifest.json",
 };
