@@ -120,6 +120,21 @@ export default function ClientProfilePaage({ params }: { params: { id: string } 
         }
     };
 
+    const handleDeleteClient = async () => {
+        if (confirm(`ATENÇÃO: Deseja realmente excluir o cliente ${client.name}? Isso apagará todos os seus veículos e históricos permanentemente.`)) {
+            try {
+                const { error } = await supabase.from('clients').delete().eq('id', params.id);
+                if (error) throw error;
+                toast.success("Cliente removido com sucesso.");
+                router.push('/');
+                router.refresh();
+            } catch (error) {
+                console.error(error);
+                toast.error("Erro ao excluir cliente.");
+            }
+        }
+    };
+
     if (loading) return <div className="min-h-screen flex items-center justify-center">Carregando perfil...</div>;
     if (!client) return <div className="min-h-screen flex items-center justify-center">Cliente não encontrado.</div>;
 
@@ -148,86 +163,81 @@ export default function ClientProfilePaage({ params }: { params: { id: string } 
                         </div>
                     </div>
 
-                    {/* ADD VEHICLE DIALOG */}
-                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button className="h-14 px-8 text-lg font-bold uppercase bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-900/20 rounded-xl">
-                                <Plus className="mr-2" /> Novo Carro
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Adicionar Veículo para {client.name.split(' ')[0]}</DialogTitle>
-                            </DialogHeader>
-                            <form onSubmit={handleAddVehicle} className="space-y-4 pt-4">
-                                <div>
-                                    <label className="text-sm font-bold uppercase text-gray-500">Placa</label>
-                                    <Input
-                                        value={newPlate}
-                                        onChange={e => setNewPlate(formatPlate(e.target.value))}
-                                        placeholder="ABC1234"
-                                        maxLength={7}
-                                        className="text-2xl font-mono uppercase"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-sm font-bold uppercase text-gray-500">Modelo</label>
-                                    <Input
-                                        value={newModel}
-                                        onChange={e => setNewModel(e.target.value)}
-                                        placeholder="Ex: Fiat Uno"
-                                        className="text-lg"
-                                    />
-                                </div>
-                                <Button type="submit" disabled={addingVehicle} className="w-full h-12 text-lg font-bold bg-green-600 hover:bg-green-700">
-                                    {addingVehicle ? 'Salvando...' : 'Adicionar Veículo'}
+                    <div className="flex flex-col gap-2 w-full md:w-auto">
+                        <Button variant="destructive" size="sm" onClick={handleDeleteClient} className="opacity-70 hover:opacity-100 w-full md:w-auto">
+                            <Trash2 className="h-4 w-4 mr-2" /> Excluir Perfil
+                        </Button>
+
+                        {/* ADD VEHICLE DIALOG */}
+                        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button className="h-14 px-8 text-lg font-bold uppercase bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-900/20 rounded-xl">
+                                    <Plus className="mr-2" /> Novo Carro
                                 </Button>
-                            </form>
-                        </DialogContent>
-                    </Dialog>
-                </div>
-
-                {/* FLEET LIST */}
-                <h2 className="text-xl font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                    <Car className="text-gray-300" /> Frota do Cliente ({vehicles.length})
-                </h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {vehicles.map(vehicle => (
-                        <div key={vehicle.id} className="relative group">
-                            <VehicleCard
-                                title={vehicle.model}
-                                plate={vehicle.plate}
-                                link={`/vehicle/${vehicle.id}`} // Takes to history page
-                                detail="VER HISTÓRICO"
-                                subtitle={
-                                    <div className="mt-2 text-sm text-gray-400 font-mono">
-                                        Cadastrado em {new Date().getFullYear()}
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Adicionar Veículo para {client.name.split(' ')[0]}</DialogTitle>
+                                </DialogHeader>
+                                <form onSubmit={handleAddVehicle} className="space-y-4 pt-4">
+                                    <div>
+                                        <label className="text-sm font-bold uppercase text-gray-500">Placa</label>
+                                        <Input
+                                            value={newPlate}
+                                            onChange={e => setNewPlate(formatPlate(e.target.value))}
+                                            placeholder="ABC1234"
+                                            maxLength={7}
+                                            className="text-2xl font-mono uppercase"
+                                        />
                                     </div>
-                                }
-                                status="ok"
-                            />
-                            {/* Delete Action (Optional, strictly for admin) */}
-                            <Button
-                                variant="destructive"
-                                size="icon"
-                                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-20"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    handleDeleteVehicle(vehicle.id, vehicle.model);
-                                }}
-                            >
-                                <Trash2 size={16} />
-                            </Button>
-                        </div>
-                    ))}
+                                    <div>
+                                        <label className="text-sm font-bold uppercase text-gray-500">Modelo</label>
+                                        <Input
+                                            value={newModel}
+                                            onChange={e => setNewModel(e.target.value)}
+                                            placeholder="Ex: Fiat Uno"
+                                            className="text-lg"
+                                        />
+                                    </div>
+                                    <Button type="submit" disabled={addingVehicle} className="w-full h-12 text-lg font-bold bg-green-600 hover:bg-green-700">
+                                        {addingVehicle ? 'Salvando...' : 'Adicionar Veículo'}
+                                    </Button>
+                                </form>
+                            </DialogContent>
+                        </Dialog>
+                    </div>
 
-                    {vehicles.length === 0 && (
-                        <div className="col-span-full py-12 text-center border-2 border-dashed border-gray-200 rounded-xl">
-                            <p className="text-gray-400 text-lg">Este cliente ainda não possui veículos cadastrados.</p>
-                        </div>
-                    )}
-                </div>
+                    {/* FLEET LIST */}
+                    <h2 className="text-xl font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                        <Car className="text-gray-300" /> Frota do Cliente ({vehicles.length})
+                    </h2>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {vehicles.map(vehicle => (
+                            <div key={vehicle.id} className="relative group">
+                                <VehicleCard
+                                    title={vehicle.model}
+                                    plate={vehicle.plate}
+                                    link={`/vehicle/${vehicle.id}`} // Takes to history page
+                                    detail="VER HISTÓRICO"
+                                    subtitle={
+                                        <div className="mt-2 text-sm text-gray-400 font-mono">
+                                            Cadastrado em {new Date().getFullYear()}
+                                        </div>
+                                    }
+                                    status="ok"
+                                    actionIcon={<Trash2 size={18} />}
+                                    onAction={() => handleDeleteVehicle(vehicle.id, vehicle.model)}
+                                />
+                            </div>
+                        ))}
+
+                        {vehicles.length === 0 && (
+                            <div className="col-span-full py-12 text-center border-2 border-dashed border-gray-200 rounded-xl">
+                                <p className="text-gray-400 text-lg">Este cliente ainda não possui veículos cadastrados.</p>
+                            </div>
+                        )}
+                    </div>
 
             </main>
         </div>
