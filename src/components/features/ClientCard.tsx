@@ -6,7 +6,7 @@ import { User, Car } from 'lucide-react';
 interface ClientCardProps {
     id: string;
     name: string;
-    phone?: string;
+    phone?: string | null;
     vehicleCount: number;
 }
 
