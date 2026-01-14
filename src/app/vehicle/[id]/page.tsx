@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, MessageCircle } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function VehiclePage({ params }: { params: { id: string } }) {
@@ -13,6 +13,8 @@ export default function VehiclePage({ params }: { params: { id: string } }) {
     const [records, setRecords] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const supabase = createClient();
+
+    const [prediction, setPrediction] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -33,7 +35,41 @@ export default function VehiclePage({ params }: { params: { id: string } }) {
                     .eq('vehicle_id', params.id)
                     .order('date', { ascending: false });
 
-                setRecords(historyData || []);
+                const recs = historyData || [];
+                setRecords(recs);
+
+                // 3. Calculate Prediction (Intelligence)
+                if (recs.length >= 2) {
+                    // We have history! Let's calculate avg usage.
+                    const latest = recs[0];
+                    const previous = recs[1]; // Compare with the one before
+
+                    const date1 = new Date(latest.date);
+                    const date2 = new Date(previous.date);
+                    const diffTime = Math.abs(date1.getTime() - date2.getTime());
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                    const kmDiff = latest.km - previous.km;
+
+                    if (diffDays > 0 && kmDiff > 0) {
+                        const kmPerDay = kmDiff / diffDays;
+                        const nextServiceKm = 10000; // Standard interval
+                        const daysToNext = Math.round(nextServiceKm / kmPerDay);
+
+                        const nextDate = new Date(date1);
+                        nextDate.setDate(nextDate.getDate() + daysToNext);
+
+                        setPrediction(`Baseado no uso (${Math.round(kmPerDay)} km/dia), previsão da próxima troca: ${nextDate.toLocaleDateString()}`);
+                    } else {
+                        setPrediction("Uso irregular, previsão para daqui 6 meses.");
+                    }
+                } else if (recs.length === 1) {
+                    // Only one record, use Standard 6 months
+                    const latest = recs[0];
+                    const nextDate = new Date(latest.date);
+                    nextDate.setMonth(nextDate.getMonth() + 6);
+                    setPrediction(`Previsão estimada (Padrão 6 meses): ${nextDate.toLocaleDateString()}`);
+                }
             }
             setLoading(false);
         };
@@ -70,15 +106,29 @@ export default function VehiclePage({ params }: { params: { id: string } }) {
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900">{vehicle.model}</h1>
                         <p className="text-xl text-gray-500 font-mono">{vehicle.plate}</p>
-                        <p className="text-gray-600 mt-1">Proprietário: <span className="font-semibold">{vehicle.client.name}</span></p>
+                        <div className="mt-2 text-lg">
+                            <span className="text-gray-600">Dono(a): </span>
+                            <Link href={`/client/${vehicle.client.id}`} className="font-bold text-blue-600 hover:text-blue-800 hover:underline">
+                                {vehicle.client.name}
+                            </Link>
+                        </div>
                     </div>
-
-                    {/* The "Share on WhatsApp" button requested by the "Owner" */}
-                    <Button onClick={handleShare} className="bg-green-600 hover:bg-green-700 text-white">
-                        <MessageCircle className="mr-2 h-5 w-5" />
-                        Enviar Resumo
-                    </Button>
                 </div>
+
+                {/* Prediction Card - The Intelligence Layer */}
+                {prediction && (
+                    <Card className="mb-8 border-l-4 border-l-blue-500 bg-blue-50">
+                        <CardContent className="pt-6 flex items-center gap-4">
+                            <div className="bg-blue-100 p-3 rounded-full">
+                                <MessageCircle className="h-6 w-6 text-blue-700" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-gray-900">Inteligência da Oficina</h3>
+                                <p className="text-gray-700">{prediction}</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {/* Timeline */}
                 <div className="space-y-6">
@@ -87,14 +137,34 @@ export default function VehiclePage({ params }: { params: { id: string } }) {
                     {records.map((record) => (
                         <Card key={record.id} className="border-l-4 border-l-primary-500">
                             <CardHeader className="pb-2 bg-gray-50/50">
-                                <div className="flex justify-between items-baseline">
+                                <div className="flex justify-between items-baseline w-full">
                                     <CardTitle className="text-lg">
                                         {new Date(record.date).toLocaleDateString()}
                                     </CardTitle>
-                                    <span className="font-mono font-bold text-gray-600">{record.km.toLocaleString()} KM</span>
+                                    <div className="flex items-center gap-4">
+                                        <span className="font-mono font-bold text-gray-600">{record.km.toLocaleString()} KM</span>
+                                        <button
+                                            onClick={async () => {
+                                                if (confirm('Tem certeza que deseja APAGAR este registro?')) {
+                                                    await supabase.from('maintenance_records').delete().eq('id', record.id);
+                                                    window.location.reload();
+                                                }
+                                            }}
+                                            className="text-red-400 hover:text-red-600 p-1"
+                                            title="Excluir Registro"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </button>
+                                    </div>
                                 </div>
                             </CardHeader>
                             <CardContent className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                                {record.oil && (
+                                    <div className="col-span-full mb-2 bg-yellow-50 p-2 rounded border border-yellow-200 text-center">
+                                        <span className="text-yellow-800 text-sm font-bold uppercase block">Óleo Usado</span>
+                                        <span className="text-xl font-black text-gray-900">{record.oil}</span>
+                                    </div>
+                                )}
                                 {record.filter_oil && (
                                     <div className="flex justify-between border-b border-dashed pb-1">
                                         <span className="text-gray-500">Filtro de Óleo:</span>

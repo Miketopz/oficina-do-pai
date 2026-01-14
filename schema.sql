@@ -26,6 +26,7 @@ create table maintenance_records (
   vehicle_id uuid references vehicles(id) on delete cascade not null,
   date timestamp with time zone default now(),
   km integer not null,
+  oil text, -- Tipo de oleo (Ex: 5W30 Sintetico)
   
   -- Filter information (Text to allow Brand/Code, nullable if not changed)
   filter_oil text,

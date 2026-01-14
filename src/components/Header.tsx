@@ -17,7 +17,7 @@ export function Header() {
     };
 
     return (
-        <header className="border-b bg-white">
+        <header className="border-b bg-card border-border">
             <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                 <Link href="/" className="flex items-center gap-2 font-bold text-xl text-primary-700">
                     <Wrench className="h-6 w-6" />
