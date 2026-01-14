@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { formatPlate } from '@/lib/utils';
 import { maintenanceService } from '@/services/maintenanceService';
 
-export default function ClientProfilePaage({ params }: { params: { id: string } }) {
+export default function ClientProfilePage({ params }: { params: { id: string } }) {
     const router = useRouter();
     const supabase = createClient();
     const [client, setClient] = useState<any>(null);
