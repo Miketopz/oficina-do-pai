@@ -261,12 +261,12 @@ function NewServiceForm() {
                                             }}
                                             placeholder="ABC1234"
                                             maxLength={7}
-                                            className="h-16 text-3xl font-mono uppercase tracking-widest border-2 border-gray-300 focus:border-blue-500"
+                                            className="h-16 text-3xl font-mono uppercase tracking-widest border-2 border-gray-300 focus:border-blue-500 text-slate-900 bg-white"
                                         />
                                         {errors.vehiclePlate && <p className="text-red-600 font-bold mt-1 text-lg">{errors.vehiclePlate.message}</p>}
                                     </div>
                                     <div>
-                                        <Input {...register('vehicleModel')} placeholder="Modelo (Ex: Gol)" className="h-14 text-xl border-2 border-gray-300" />
+                                        <Input {...register('vehicleModel')} placeholder="Modelo (Ex: Gol)" className="h-14 text-xl border-2 border-gray-300 text-slate-900 bg-white" />
                                         {errors.vehicleModel && <p className="text-red-600">{errors.vehicleModel.message}</p>}
                                     </div>
                                 </CardContent>
@@ -277,7 +277,7 @@ function NewServiceForm() {
                                     <CardTitle className="text-xl flex items-center gap-2 text-gray-700"><User /> Dono</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
-                                    <Input {...register('clientName')} className="h-14 text-xl" placeholder="Nome Completo" />
+                                    <Input {...register('clientName')} className="h-14 text-xl text-slate-900 bg-white" placeholder="Nome Completo" />
                                     {errors.clientName && <p className="text-red-600">{errors.clientName.message}</p>}
                                     <Input
                                         {...register('clientPhone')}
@@ -285,7 +285,7 @@ function NewServiceForm() {
                                             handlePhoneChange(e);
                                             register('clientPhone').onChange(e);
                                         }}
-                                        className="h-14 text-xl"
+                                        className="h-14 text-xl text-slate-900 bg-white"
                                         maxLength={15}
                                         placeholder="Telefone (11) 99999-9999"
                                     />
@@ -303,22 +303,22 @@ function NewServiceForm() {
                             <Card className="border-2 border-yellow-100 shadow-md">
                                 <CardHeader className="bg-yellow-50/50 pb-2"><CardTitle className="text-yellow-800"><Wrench /> Troca de Óleo</CardTitle></CardHeader>
                                 <CardContent className="pt-4 space-y-4">
-                                    <Input type="number" {...register('km')} className="h-16 text-3xl" placeholder="KM Atual" />
+                                    <Input type="number" {...register('km')} className="h-16 text-3xl text-slate-900 bg-white" placeholder="KM Atual" />
                                     {errors.km && <p className="text-red-600">{errors.km.message}</p>}
 
                                     <label className="font-bold">🛢️ Óleo Utilizado</label>
-                                    <Input {...register('oil')} className="h-14 text-xl bg-yellow-50" placeholder="Ex: 5W30 Shell" />
-                                    <Input type="date" {...register('date')} className="h-12" />
+                                    <Input {...register('oil')} className="h-14 text-xl bg-white text-slate-900" placeholder="Ex: 5W30 Shell" />
+                                    <Input type="date" {...register('date')} className="h-12 text-slate-900 bg-white" />
                                 </CardContent>
                             </Card>
 
                             {/* Filter Inputs (Simplified) */}
                             <div className="grid grid-cols-1 gap-2">
-                                <Input {...register('filterOil')} placeholder="Filtro de Óleo" className="h-12" />
-                                <Input {...register('filterAir')} placeholder="Filtro de Ar" className="h-12" />
-                                <Input {...register('filterFuel')} placeholder="Filtro de Combustível" className="h-12" />
-                                <Input {...register('filterCabin')} placeholder="Filtro de Cabine" className="h-12" />
-                                <Input {...register('notes')} placeholder="Observações" className="h-12" />
+                                <Input {...register('filterOil')} placeholder="Filtro de Óleo" className="h-12 text-slate-900 bg-white" />
+                                <Input {...register('filterAir')} placeholder="Filtro de Ar" className="h-12 text-slate-900 bg-white" />
+                                <Input {...register('filterFuel')} placeholder="Filtro de Combustível" className="h-12 text-slate-900 bg-white" />
+                                <Input {...register('filterCabin')} placeholder="Filtro de Cabine" className="h-12 text-slate-900 bg-white" />
+                                <Input {...register('notes')} placeholder="Observações" className="h-12 text-slate-900 bg-white" />
                             </div>
 
                             <div className="flex gap-4">
