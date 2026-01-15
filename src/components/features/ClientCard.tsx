@@ -24,11 +24,11 @@ export function ClientCard({ id, name, phone, vehicleCount }: ClientCardProps) {
                     </div>
                 </div>
 
-                <div className="mt-2 pt-2 border-t border-border flex items-center justify-between">
-                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                <div className="mt-2 pt-2 border-t border-zinc-800 flex items-center justify-between">
+                    <span className="text-xs font-bold text-zinc-400 uppercase tracking-wide group-hover:text-zinc-300 transition-colors">
                         Veículos
                     </span>
-                    <div className="flex items-center gap-1 bg-secondary px-2 py-1 rounded text-xs font-bold">
+                    <div className="flex items-center gap-1 bg-zinc-800 text-zinc-300 px-2 py-1 rounded text-xs font-bold border border-zinc-700 group-hover:bg-zinc-700 group-hover:text-white transition-colors">
                         <Car size={14} />
                         {vehicleCount}
                     </div>
