@@ -32,7 +32,7 @@ const FilterRow = ({ label, value }: { label: string, value?: string | null }) =
             </span>
             <span className={cn("font-bold text-right text-sm", isChanged ? "text-slate-800" : "text-gray-400 italic")}>
                 {isChanged ? cleanValue : (
-                    isKept && hasValue ? `${cleanValue} (Mantido)` : "Não trocado"
+                    isKept && hasValue ? cleanValue : "Não trocado"
                 )}
             </span>
         </div>
