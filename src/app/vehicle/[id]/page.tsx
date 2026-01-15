@@ -212,42 +212,41 @@ export default function VehiclePage({ params }: { params: { id: string } }) {
                 <div className="space-y-6">
                     <h2 className="text-xl font-semibold border-b pb-2">Histórico de Manutenção</h2>
 
-                    {records.map((record, index) => {
-                        const serviceNumber = records.length - index;
+                    {[...records].reverse().map((record, index) => {
+                        // Chronological Order: Index 0 is 1st.
+                        const exchangeNumber = index + 1;
                         return (
-                            <Card key={record.id} className="border-l-4 border-l-primary-500">
-                                <CardHeader className="pb-2 bg-gray-50/50">
-                                    <div className="flex justify-between items-baseline w-full">
-                                        <div className="flex flex-col">
-                                            <span className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">
-                                                {serviceNumber}ª Troca
-                                            </span>
-                                            <CardTitle className="text-lg">
-                                                {new Date(record.date).toLocaleDateString()}
-                                            </CardTitle>
-                                        </div>
-                                        <div className="flex items-center gap-4">
-                                            <span className="font-mono font-bold text-gray-600">{record.km.toLocaleString()} KM</span>
-                                            <button
-                                                onClick={() => setRecordToDelete(record.id)}
-                                                className="text-red-400 hover:text-red-600 p-1"
-                                                title="Excluir Registro"
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </button>
+                            <div key={record.id} className="bg-white rounded-xl shadow-sm border border-slate-100 p-5 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 p-4">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                                        onClick={() => setRecordToDelete(record.id)}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
+
+                                <div className="flex justify-between items-start mb-6 pr-10">
+                                    <div>
+                                        <span className="inline-block px-2 py-1 bg-blue-50 text-blue-700 text-xs font-black rounded uppercase tracking-wider mb-2">
+                                            {exchangeNumber}ª Troca
+                                        </span>
+                                        <div className="text-2xl font-black text-slate-900">
+                                            {format(new Date(record.date || new Date()), "dd/MM/yyyy")}
                                         </div>
                                     </div>
-                                </CardHeader>
-                                <CardContent className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-                                    {record.oil && (
-                                        <div className="col-span-full mb-2 bg-yellow-50 p-2 rounded border border-yellow-200 text-center relative overflow-hidden">
-                                            <div className="absolute top-2 right-2">
-                                                <Check className="w-5 h-5 text-green-600" />
-                                            </div>
-                                            <span className="text-yellow-800 text-sm font-bold uppercase block">Óleo Usado</span>
-                                            <span className="text-xl font-black text-gray-900">{record.oil}</span>
+                                    <div className="text-right">
+                                        <div className="text-sm font-bold text-gray-400 uppercase tracking-widest">Quilometragem</div>
+                                        <div className="text-xl font-mono font-bold text-slate-700">
+                                            {record.km ? Number(record.km).toLocaleString('pt-BR') : '---'} KM
                                         </div>
-                                    )}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                                    <FilterRow label="Óleo do Motor" value={record.oil} />
                                     <FilterRow label="Filtro de Óleo" value={record.filter_oil} />
                                     <FilterRow label="Filtro de Ar" value={record.filter_air} />
                                     <FilterRow label="Filtro de Combustível" value={record.filter_fuel} />
