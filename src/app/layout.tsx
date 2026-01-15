@@ -21,7 +21,14 @@ export default function RootLayout({
             <body className={inter.className}>
                 <div className="min-h-screen flex flex-col">
                     {children}
-                    <Toaster richColors position="top-center" />
+                    <Toaster
+                        position="bottom-right"
+                        toastOptions={{
+                            className: 'border border-border bg-background text-foreground shadow-lg',
+                            duration: 4000,
+                        }}
+                        closeButton
+                    />
                     <footer className="text-center text-xs text-gray-500 py-4 opacity-50">
                         <p className="text-xs text-muted-foreground">V5.1 - GESTÃO INTELIGENTE (14/01)</p>
                     </footer>

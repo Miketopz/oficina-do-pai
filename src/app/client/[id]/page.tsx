@@ -12,6 +12,7 @@ import { Plus, User, Phone, Car, ArrowLeft, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatPlate } from '@/lib/utils';
 import { maintenanceService } from '@/services/maintenanceService';
+import { CheckCircle2, AlertTriangle } from 'lucide-react';
 
 export default function ClientProfilePage({ params }: { params: { id: string } }) {
     const router = useRouter();
@@ -93,7 +94,10 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
 
             if (error) throw error;
 
-            toast.success("Veículo adicionado!");
+            toast.success("Veículo adicionado!", {
+                description: `${newModel} (${newPlate}) agora faz parte da frota.`,
+                icon: <CheckCircle2 className="h-5 w-5 text-green-500" />
+            });
             setNewPlate('');
             setNewModel('');
             setIsDialogOpen(false);
@@ -112,7 +116,10 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
             try {
                 // Using service to handle constraints if any (though currently it's a simple delete)
                 await maintenanceService.deleteVehicle(vehicleId);
-                toast.success("Veículo removido.");
+                toast.success("Veículo removido.", {
+                    description: `O ${model} foi retirado da lista.`,
+                    icon: <Trash2 className="h-5 w-5 text-red-500" />
+                });
                 fetchData();
             } catch (error) {
                 toast.error("Erro ao remover veículo.");
