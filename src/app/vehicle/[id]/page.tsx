@@ -257,14 +257,11 @@ export default function VehiclePage({ params }: { params: { id: string } }) {
                                             <strong>Obs:</strong> {record.notes}
                                         </div>
                                     )}
+                                </div>
                             </div>
-                        </div>
                         );
                     })}
-                                </CardContent>
-                            </Card>
-                        );
-                    })}
+
 
                     {records.length === 0 && (
                         <div className="text-center py-16 px-4 bg-white rounded-2xl border-2 border-dashed border-gray-200">
