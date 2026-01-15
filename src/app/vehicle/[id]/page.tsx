@@ -213,9 +213,8 @@ export default function VehiclePage({ params }: { params: { id: string } }) {
                 <div className="space-y-6">
                     <h2 className="text-xl font-semibold border-b pb-2">Histórico de Manutenção</h2>
 
-                    {[...records].reverse().map((record, index) => {
-                        // Chronological Order: Index 0 is 1st.
-                        const exchangeNumber = index + 1;
+                    {records.map((record, index) => {
+                        const exchangeNumber = records.length - index;
                         return (
                             <div key={record.id} className="bg-white rounded-xl shadow-sm border border-slate-100 p-5 relative overflow-hidden">
                                 <div className="absolute top-0 right-0 p-4">
