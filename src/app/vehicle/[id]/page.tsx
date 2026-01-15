@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase';
 import { Header } from '@/components/features/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, MessageCircle, Trash2, AlertTriangle, Check } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Trash2, AlertTriangle, Check, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { cn, getServiceStatus, statusStyles } from '@/lib/utils';
 
@@ -117,6 +117,11 @@ export default function VehiclePage({ params }: { params: { id: string } }) {
                             </Link>
                         </div>
                     </div>
+                    <Link href={`/new?plate=${vehicle.plate}&clientId=${vehicle.client.id}`}>
+                        <Button className="h-12 text-lg font-bold bg-blue-600 hover:bg-blue-700 shadow-lg animate-pulse">
+                            <Plus className="mr-2 h-5 w-5" /> Nova Troca
+                        </Button>
+                    </Link>
                 </div>
 
                 {/* STATUS BANNER */}
