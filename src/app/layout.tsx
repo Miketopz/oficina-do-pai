@@ -30,7 +30,7 @@ export default function RootLayout({
                         closeButton
                     />
                     <footer className="text-center text-xs text-gray-500 py-4 opacity-50">
-                        <p className="text-xs text-muted-foreground">V5.1 - GESTÃO INTELIGENTE (14/01)</p>
+                        {/* Version info removed */}
                     </footer>
                 </div>
             </body>
