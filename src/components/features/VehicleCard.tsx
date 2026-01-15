@@ -46,7 +46,7 @@ export function VehicleCard({ title, plate, subtitle, detail, link, actionIcon, 
                 </div>
 
                 <CardContent className="p-4">
-                    <h3 className="text-xl font-bold text-foreground truncate">{title}</h3>
+                    <h3 className="text-xl font-bold text-foreground truncate uppercase">{title}</h3>
                     {subtitle}
                 </CardContent>
             </Link>
