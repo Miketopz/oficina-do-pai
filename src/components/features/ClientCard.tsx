@@ -12,7 +12,8 @@ interface ClientCardProps {
 
 export function ClientCard({ id, name, phone, vehicleCount }: ClientCardProps) {
     return (
-        <Card className="group relative overflow-hidden bg-card border border-border shadow-md hover:border-primary transition-all duration-300 cursor-pointer">
+    return (
+        <Card className="group relative overflow-hidden bg-zinc-900/80 border border-zinc-800 shadow-sm hover:bg-zinc-900 hover:border-zinc-700 hover:shadow-md transition-all duration-300 cursor-pointer">
             <div className="p-4 flex flex-col gap-2">
                 <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
