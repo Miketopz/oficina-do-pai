@@ -25,6 +25,7 @@ export const maintenanceService = {
                 vehicle:vehicles!inner (id, plate, model, client:clients!inner(id, name))
             `)
             .order('date', { ascending: false })
+            .order('created_at', { ascending: false })
             .limit(20);
 
         if (error) {
