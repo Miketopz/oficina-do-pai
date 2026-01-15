@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, MessageCircle, Trash2, AlertTriangle, Check, Plus, Info, X } from 'lucide-react';
 import Link from 'next/link';
+import { format } from 'date-fns';
 import { cn, getServiceStatus, statusStyles } from '@/lib/utils';
 
 const FilterRow = ({ label, value }: { label: string, value?: string | null }) => {
@@ -256,6 +257,10 @@ export default function VehiclePage({ params }: { params: { id: string } }) {
                                             <strong>Obs:</strong> {record.notes}
                                         </div>
                                     )}
+                            </div>
+                        </div>
+                        );
+                    })}
                                 </CardContent>
                             </Card>
                         );
@@ -296,7 +301,7 @@ export default function VehiclePage({ params }: { params: { id: string } }) {
                     </AlertDialogContent>
                 </AlertDialog>
 
-            </main>
-        </div>
+            </main >
+        </div >
     );
 }
