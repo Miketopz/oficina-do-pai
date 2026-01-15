@@ -80,8 +80,18 @@ export function useMaintenanceDashboard() {
 
             // 3. SMART CREATE: If no results and looks like a VALID plate (Mercosul/Grey), prompt for new record
             // Regex: 3 Letters + 1 Number + 1 Alphanum + 2 Numbers (Covers ABC1234 and ABC1D23)
-            if (results.length === 0 && cleanSearch.length === 7 && /^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/.test(cleanSearch)) {
-                setNotFoundPlate(cleanSearch);
+            if (results.length === 0) {
+                // A. Valid Plate Format -> Offer Registration
+                if (cleanSearch.length === 7 && /^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/.test(cleanSearch)) {
+                    setNotFoundPlate(cleanSearch);
+                }
+                // B. Invalid Plate Format -> Show Warning
+                else if (cleanSearch.length === 7) {
+                    toast.warning("Formato de Placa Inválido. Use o padrão Mercosul (ABC1D23) ou Antigo (ABC1234).");
+                }
+                else if (/^\d/.test(cleanSearch) && cleanSearch.length > 3) {
+                    toast.warning("Placas devem começar com letras.");
+                }
             }
 
         } catch (error) {
