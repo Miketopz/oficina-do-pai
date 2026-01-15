@@ -7,6 +7,7 @@ import { ClientCard } from '@/components/features/ClientCard';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { StatCard } from '@/components/ui/stat-card';
 import { getServiceStatus } from '@/lib/utils';
 import { Search, Plus, Car, Trash2, Activity, Droplet } from 'lucide-react';
@@ -21,12 +22,41 @@ export default function Dashboard() {
         searchTerm,
         setSearchTerm,
         handleSearch,
+        notFoundPlate,
+        setNotFoundPlate,
         reloadFleet
     } = useMaintenanceDashboard();
 
     return (
         <div className="min-h-screen bg-background text-foreground pb-20">
             <Header />
+
+            {/* Custom Alert Logic */}
+            <Dialog open={!!notFoundPlate} onOpenChange={(open: boolean) => !open && setNotFoundPlate(null)}>
+                <DialogContent>
+                    <div className="flex flex-col items-center justify-center p-4 text-center space-y-4">
+                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-2">
+                            <Search className="w-8 h-8 text-blue-600" />
+                        </div>
+                        <h2 className="text-2xl font-bold">Placa Não Encontrada</h2>
+                        <p className="text-muted-foreground text-lg">
+                            O veículo <span className="font-mono font-bold text-foreground bg-secondary px-2 py-1 rounded">{notFoundPlate}</span> ainda não tem cadastro.
+                        </p>
+                        <p className="text-muted-foreground">Deseja iniciar um novo serviço para ele agora?</p>
+
+                        <div className="flex gap-4 w-full mt-4">
+                            <Button variant="outline" className="flex-1 h-12 text-lg" onClick={() => setNotFoundPlate(null)}>
+                                Cancelar
+                            </Button>
+                            <Link href={`/new?plate=${notFoundPlate}`} className="flex-1">
+                                <Button className="w-full h-12 text-lg font-bold bg-blue-600 hover:bg-blue-700">
+                                    Cadastrar
+                                </Button>
+                            </Link>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             <main className="container mx-auto px-4 py-8">
 

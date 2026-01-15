@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { maintenanceService } from '@/services/maintenanceService';
 import { analyticsService } from '@/services/analyticsService';
@@ -7,11 +8,14 @@ import { Service, Vehicle, ClientWithFleet } from '@/types';
 
 export function useMaintenanceDashboard() {
     const [recentServices, setRecentServices] = useState<Service[]>([]);
-    const [fleet, setFleet] = useState<Vehicle[]>([]); // Keep for search compatibility if needed, or remove
+    const [fleet, setFleet] = useState<Vehicle[]>([]);
     const [clients, setClients] = useState<ClientWithFleet[]>([]);
     const [stats, setStats] = useState({ monthly: 0, topOil: 'N/A' });
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
+
+    const [notFoundPlate, setNotFoundPlate] = useState<string | null>(null);
+    const router = useRouter();
 
     useEffect(() => {
         fetchInitialData();
@@ -56,15 +60,13 @@ export function useMaintenanceDashboard() {
         setLoading(true);
         try {
             // 1. SMART CHECK: Is it an existing plate?
-            // Remove whitespace and potential hyphens for the check
             const cleanSearch = searchTerm.trim().toUpperCase().replace('-', '');
 
             // Only try direct plate lookup if it looks like a plate (alphanumeric, < 9 chars)
             if (cleanSearch.length >= 3 && cleanSearch.length <= 8) {
                 const vehicleId = await maintenanceService.getVehicleByPlate(cleanSearch);
                 if (vehicleId) {
-                    // FOUND! Redirect directly to vehicle history
-                    window.location.href = `/vehicle/${vehicleId}`;
+                    router.push(`/vehicle/${vehicleId}`);
                     return;
                 }
             }
@@ -73,11 +75,9 @@ export function useMaintenanceDashboard() {
             const results = await maintenanceService.search(searchTerm);
             setRecentServices(results);
 
-            // 3. SMART CREATE: If no results and looks like a plate, redirect to New
+            // 3. SMART CREATE: If no results and looks like a plate, prompt for new record
             if (results.length === 0 && cleanSearch.length >= 5 && cleanSearch.length <= 7 && /^[A-Z0-9]+$/.test(cleanSearch)) {
-                if (confirm(`Placa ${cleanSearch} não encontrada. Deseja cadastrar agora?`)) {
-                    window.location.href = `/new?plate=${cleanSearch}`;
-                }
+                setNotFoundPlate(cleanSearch);
             }
 
         } catch (error) {
@@ -103,6 +103,8 @@ export function useMaintenanceDashboard() {
         setSearchTerm,
         loading,
         handleSearch,
+        notFoundPlate,
+        setNotFoundPlate,
         reloadFleet: async () => {
             const updated = await maintenanceService.getClientsWithFleet();
             setClients(updated);
