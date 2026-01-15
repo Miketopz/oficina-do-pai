@@ -147,5 +147,110 @@ export const maintenanceService = {
         const supabase = createClient();
         const { error } = await supabase.from('vehicles').delete().eq('id', id);
         if (error) throw error;
+    },
+
+    /**
+     * Creates a new maintenance record, handling all dependencies:
+     * 1. Resolves Client (Find by Phone -> Find by Name -> Create New)
+     * 2. Resolves Vehicle (Find by Plate -> Check Ownership -> Create New)
+     * 3. Inserts Maintenance Record
+     * 
+     * @param data DTO containing service, vehicle, and client information
+     * @returns The created record ID
+     */
+    async createMaintenanceRecord(data: import('@/types').CreateServiceDTO): Promise<void> {
+        const supabase = createClient();
+
+        // 1. Resolve Vehicle FIRST (Check ownership)
+        let vehicleId: string;
+        let existingOwnerId: string | null = null;
+
+        const { data: existingVehicle } = await supabase
+            .from('vehicles')
+            .select('id, client_id, clients(name)')
+            .eq('plate', data.vehiclePlate)
+            .maybeSingle();
+
+        if (existingVehicle) {
+            vehicleId = existingVehicle.id;
+            existingOwnerId = existingVehicle.client_id;
+        }
+
+        // 2. Resolve Client
+        let clientId = data.preFilledClientId || existingOwnerId;
+
+        if (!clientId) {
+            const finalPhone = data.clientPhone ? data.clientPhone.trim() : null;
+            const finalName = data.clientName.trim();
+
+            // 2.1 Try by PHONE (Unique ID)
+            if (finalPhone) {
+                const { data: phoneMatch } = await supabase
+                    .from('clients')
+                    .select('id')
+                    .eq('phone', finalPhone)
+                    .maybeSingle();
+
+                if (phoneMatch) clientId = phoneMatch.id;
+            }
+
+            // 2.2 Try by NAME (if no phone provided)
+            if (!clientId && !finalPhone) {
+                const { data: nameMatch } = await supabase
+                    .from('clients')
+                    .select('id')
+                    .ilike('name', finalName)
+                    .maybeSingle();
+
+                if (nameMatch) clientId = nameMatch.id;
+            }
+
+            // 2.3 Create NEW CLIENT
+            if (!clientId) {
+                const { data: newClient, error } = await supabase
+                    .from('clients')
+                    .insert({ name: finalName, phone: finalPhone })
+                    .select()
+                    .single();
+
+                if (error) throw error;
+                clientId = newClient.id;
+            }
+        }
+
+        // 3. Final Safety Check & Vehicle Creation
+        if (existingVehicle) {
+            // Safety Block: If we resolved a clientId different from vehicle owner
+            if (existingOwnerId && clientId !== existingOwnerId) {
+                // @ts-ignore
+                const ownerName = existingVehicle.clients?.name || 'Outro Cliente';
+                throw new Error(`Esta placa já pertence a ${ownerName}. Impossível registrar para outra pessoa.`);
+            }
+        } else {
+            // Create New Vehicle
+            const { data: newVehicle, error } = await supabase
+                .from('vehicles')
+                .insert({ client_id: clientId, plate: data.vehiclePlate, model: data.vehicleModel })
+                .select()
+                .single();
+
+            if (error) throw error;
+            vehicleId = newVehicle.id;
+        }
+
+        // 4. Create Record
+        const { error: recordError } = await supabase.from('maintenance_records').insert({
+            vehicle_id: vehicleId,
+            date: data.date,
+            km: data.km,
+            oil: data.oil,
+            filter_oil: data.filterOil,
+            filter_air: data.filterAir,
+            filter_fuel: data.filterFuel,
+            filter_cabin: data.filterCabin,
+            notes: data.notes
+        });
+
+        if (recordError) throw recordError;
     }
 };
