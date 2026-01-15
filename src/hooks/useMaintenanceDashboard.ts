@@ -78,8 +78,9 @@ export function useMaintenanceDashboard() {
             const results = await maintenanceService.search(searchTerm);
             setRecentServices(results);
 
-            // 3. SMART CREATE: If no results and looks like a plate, prompt for new record
-            if (results.length === 0 && cleanSearch.length >= 5 && cleanSearch.length <= 7 && /^[A-Z0-9]+$/.test(cleanSearch)) {
+            // 3. SMART CREATE: If no results and looks like a VALID plate (Mercosul/Grey), prompt for new record
+            // Regex: 3 Letters + 1 Number + 1 Alphanum + 2 Numbers (Covers ABC1234 and ABC1D23)
+            if (results.length === 0 && cleanSearch.length === 7 && /^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/.test(cleanSearch)) {
                 setNotFoundPlate(cleanSearch);
             }
 
