@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase';
 import { Header } from '@/components/features/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, MessageCircle, Trash2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Trash2, AlertTriangle, Check } from 'lucide-react';
 import Link from 'next/link';
 import { cn, getServiceStatus, statusStyles } from '@/lib/utils';
 
@@ -150,69 +150,88 @@ export default function VehiclePage({ params }: { params: { id: string } }) {
                 <div className="space-y-6">
                     <h2 className="text-xl font-semibold border-b pb-2">Histórico de Manutenção</h2>
 
-                    {records.map((record) => (
-                        <Card key={record.id} className="border-l-4 border-l-primary-500">
-                            <CardHeader className="pb-2 bg-gray-50/50">
-                                <div className="flex justify-between items-baseline w-full">
-                                    <CardTitle className="text-lg">
-                                        {new Date(record.date).toLocaleDateString()}
-                                    </CardTitle>
-                                    <div className="flex items-center gap-4">
-                                        <span className="font-mono font-bold text-gray-600">{record.km.toLocaleString()} KM</span>
-                                        <button
-                                            onClick={async () => {
-                                                if (confirm('Tem certeza que deseja APAGAR este registro?')) {
-                                                    await supabase.from('maintenance_records').delete().eq('id', record.id);
-                                                    window.location.reload();
-                                                }
-                                            }}
-                                            className="text-red-400 hover:text-red-600 p-1"
-                                            title="Excluir Registro"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </button>
+                    {records.map((record, index) => {
+                        const serviceNumber = records.length - index;
+                        return (
+                            <Card key={record.id} className="border-l-4 border-l-primary-500">
+                                <CardHeader className="pb-2 bg-gray-50/50">
+                                    <div className="flex justify-between items-baseline w-full">
+                                        <div className="flex flex-col">
+                                            <span className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">
+                                                {serviceNumber}ª Troca
+                                            </span>
+                                            <CardTitle className="text-lg">
+                                                {new Date(record.date).toLocaleDateString()}
+                                            </CardTitle>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <span className="font-mono font-bold text-gray-600">{record.km.toLocaleString()} KM</span>
+                                            <button
+                                                onClick={async () => {
+                                                    if (confirm('Tem certeza que deseja APAGAR este registro?')) {
+                                                        await supabase.from('maintenance_records').delete().eq('id', record.id);
+                                                        window.location.reload();
+                                                    }
+                                                }}
+                                                className="text-red-400 hover:text-red-600 p-1"
+                                                title="Excluir Registro"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-                                {record.oil && (
-                                    <div className="col-span-full mb-2 bg-yellow-50 p-2 rounded border border-yellow-200 text-center">
-                                        <span className="text-yellow-800 text-sm font-bold uppercase block">Óleo Usado</span>
-                                        <span className="text-xl font-black text-gray-900">{record.oil}</span>
-                                    </div>
-                                )}
-                                {record.filter_oil && (
-                                    <div className="flex justify-between border-b border-dashed pb-1">
-                                        <span className="text-gray-500">Filtro de Óleo:</span>
-                                        <span className="font-medium">{record.filter_oil}</span>
-                                    </div>
-                                )}
-                                {record.filter_air && (
-                                    <div className="flex justify-between border-b border-dashed pb-1">
-                                        <span className="text-gray-500">Filtro de Ar:</span>
-                                        <span className="font-medium">{record.filter_air}</span>
-                                    </div>
-                                )}
-                                {record.filter_fuel && (
-                                    <div className="flex justify-between border-b border-dashed pb-1">
-                                        <span className="text-gray-500">Filtro de Combustível:</span>
-                                        <span className="font-medium">{record.filter_fuel}</span>
-                                    </div>
-                                )}
-                                {record.filter_cabin && (
-                                    <div className="flex justify-between border-b border-dashed pb-1">
-                                        <span className="text-gray-500">Filtro de Cabine:</span>
-                                        <span className="font-medium">{record.filter_cabin}</span>
-                                    </div>
-                                )}
-                                {record.notes && (
-                                    <div className="col-span-full mt-2 bg-yellow-50 p-3 rounded text-sm text-yellow-800">
-                                        <strong>Obs:</strong> {record.notes}
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    ))}
+                                </CardHeader>
+                                <CardContent className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                                    {record.oil && (
+                                        <div className="col-span-full mb-2 bg-yellow-50 p-2 rounded border border-yellow-200 text-center relative overflow-hidden">
+                                            <div className="absolute top-2 right-2">
+                                                <Check className="w-5 h-5 text-green-600" />
+                                            </div>
+                                            <span className="text-yellow-800 text-sm font-bold uppercase block">Óleo Usado</span>
+                                            <span className="text-xl font-black text-gray-900">{record.oil}</span>
+                                        </div>
+                                    )}
+                                    {record.filter_oil && (
+                                        <div className="flex justify-between border-b border-dashed pb-1 items-center">
+                                            <span className="text-gray-500 flex items-center gap-2">
+                                                <Check className="w-4 h-4 text-green-500" /> Filtro de Óleo:
+                                            </span>
+                                            <span className="font-medium text-right">{record.filter_oil}</span>
+                                        </div>
+                                    )}
+                                    {record.filter_air && (
+                                        <div className="flex justify-between border-b border-dashed pb-1 items-center">
+                                            <span className="text-gray-500 flex items-center gap-2">
+                                                <Check className="w-4 h-4 text-green-500" /> Filtro de Ar:
+                                            </span>
+                                            <span className="font-medium text-right">{record.filter_air}</span>
+                                        </div>
+                                    )}
+                                    {record.filter_fuel && (
+                                        <div className="flex justify-between border-b border-dashed pb-1 items-center">
+                                            <span className="text-gray-500 flex items-center gap-2">
+                                                <Check className="w-4 h-4 text-green-500" /> Filtro de Combustível:
+                                            </span>
+                                            <span className="font-medium text-right">{record.filter_fuel}</span>
+                                        </div>
+                                    )}
+                                    {record.filter_cabin && (
+                                        <div className="flex justify-between border-b border-dashed pb-1 items-center">
+                                            <span className="text-gray-500 flex items-center gap-2">
+                                                <Check className="w-4 h-4 text-green-500" /> Filtro de Cabine:
+                                            </span>
+                                            <span className="font-medium text-right">{record.filter_cabin}</span>
+                                        </div>
+                                    )}
+                                    {record.notes && (
+                                        <div className="col-span-full mt-2 bg-yellow-50 p-3 rounded text-sm text-yellow-800">
+                                            <strong>Obs:</strong> {record.notes}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        );
+                    })}
 
                     {records.length === 0 && (
                         <p className="text-gray-500 italic">Nenhum registro encontrado para este veículo.</p>
