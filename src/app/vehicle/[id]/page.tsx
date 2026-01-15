@@ -5,27 +5,32 @@ import { createClient } from '@/lib/supabase';
 import { Header } from '@/components/features/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, MessageCircle, Trash2, AlertTriangle, Check, Plus, Info } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Trash2, AlertTriangle, Check, Plus, Info, X } from 'lucide-react';
 import Link from 'next/link';
 import { cn, getServiceStatus, statusStyles } from '@/lib/utils';
 
-const FilterRow = ({ label, value }: { label: string, value: string }) => {
-    const isKept = value.includes('(MANTIDO)');
-    const cleanValue = value.replace('(MANTIDO)', '').trim();
+const FilterRow = ({ label, value }: { label: string, value?: string | null }) => {
+    // Check if value exists and is not empty string
+    const hasValue = value && value.trim().length > 0;
+    // Clean up old legacy "MANTIDO" tags just in case
+    const displayValue = hasValue ? value?.replace('(MANTIDO)', '').trim() : 'Não trocado';
 
     return (
-        <div className="flex justify-between border-b border-dashed pb-1 items-center">
-            <span className={cn("flex items-center gap-2", isKept ? "text-gray-400" : "text-gray-500")}>
-                {isKept ? (
-                    <Info className="w-4 h-4 text-gray-300" />
+        <div className="flex justify-between border-b border-dashed border-gray-100 pb-2 items-center last:border-0 hover:bg-gray-50 px-1 rounded transition-colors">
+            <span className={cn("flex items-center gap-2 font-medium text-sm", hasValue ? "text-gray-700" : "text-gray-400")}>
+                {hasValue ? (
+                    <div className="bg-green-100 p-1 rounded-full">
+                        <Check className="w-3 h-3 text-green-600 font-bold" />
+                    </div>
                 ) : (
-                    <Check className="w-4 h-4 text-green-500" />
+                    <div className="bg-red-100 p-1 rounded-full">
+                        <X className="w-3 h-3 text-red-500 font-bold" />
+                    </div>
                 )}
-                {label}:
+                {label}
             </span>
-            <span className={cn("font-medium text-right", isKept && "text-gray-400 italic")}>
-                {cleanValue}
-                {isKept && <span className="text-xs ml-1 opacity-50">(Mantido)</span>}
+            <span className={cn("font-bold text-right text-sm", hasValue ? "text-slate-800" : "text-red-300 italic")}>
+                {displayValue}
             </span>
         </div>
     );
@@ -240,18 +245,10 @@ export default function VehiclePage({ params }: { params: { id: string } }) {
                                             <span className="text-xl font-black text-gray-900">{record.oil}</span>
                                         </div>
                                     )}
-                                    {record.filter_oil && (
-                                        <FilterRow label="Filtro de Óleo" value={record.filter_oil} />
-                                    )}
-                                    {record.filter_air && (
-                                        <FilterRow label="Filtro de Ar" value={record.filter_air} />
-                                    )}
-                                    {record.filter_fuel && (
-                                        <FilterRow label="Filtro de Combustível" value={record.filter_fuel} />
-                                    )}
-                                    {record.filter_cabin && (
-                                        <FilterRow label="Filtro de Cabine" value={record.filter_cabin} />
-                                    )}
+                                    <FilterRow label="Filtro de Óleo" value={record.filter_oil} />
+                                    <FilterRow label="Filtro de Ar" value={record.filter_air} />
+                                    <FilterRow label="Filtro de Combustível" value={record.filter_fuel} />
+                                    <FilterRow label="Filtro de Cabine" value={record.filter_cabin} />
                                     {record.notes && (
                                         <div className="col-span-full mt-2 bg-yellow-50 p-3 rounded text-sm text-yellow-800">
                                             <strong>Obs:</strong> {record.notes}
