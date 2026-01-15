@@ -57,10 +57,21 @@ function NewServiceForm() {
             });
         }
 
-        // Auto-fill Plate from URL
+        // Auto-fill Plate & Model from URL
         const preFilledPlate = searchParams.get('plate');
+        const preFilledModel = searchParams.get('model');
+
         if (preFilledPlate) {
             setValue('vehiclePlate', formatPlate(preFilledPlate));
+        }
+        if (preFilledModel) {
+            setValue('vehicleModel', preFilledModel);
+        }
+
+        // AUTO-SKIP: If we have Client + Plate, jump to Step 2
+        if (preFilledClientId && preFilledPlate) {
+            toast.info("Dados do veículo carregados!", { icon: '🚗' });
+            setCurrentStep(2);
         }
     }, [preFilledClientId, searchParams, setValue, supabase]);
 

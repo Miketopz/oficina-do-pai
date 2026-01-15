@@ -117,8 +117,8 @@ export default function VehiclePage({ params }: { params: { id: string } }) {
                             </Link>
                         </div>
                     </div>
-                    <Link href={`/new?plate=${vehicle.plate}&clientId=${vehicle.client.id}`}>
-                        <Button className="h-12 text-lg font-bold bg-blue-600 hover:bg-blue-700 shadow-lg animate-pulse">
+                    <Link href={`/new?plate=${vehicle.plate}&clientId=${vehicle.client.id}&model=${encodeURIComponent(vehicle.model)}`}>
+                        <Button className="h-12 text-lg font-bold bg-blue-600 hover:bg-blue-700 shadow-lg">
                             <Plus className="mr-2 h-5 w-5" /> Nova Troca
                         </Button>
                     </Link>
