@@ -31,21 +31,19 @@ export default function Dashboard() {
             <main className="container mx-auto px-4 py-8">
 
                 {/* Top Bar: Search & New Actions */}
-                <div className="flex flex-col md:flex-row gap-4 mb-8 justify-between items-center">
-                    <form onSubmit={handleSearch} className="relative w-full md:w-1/2">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
+                <div className="flex flex-col md:flex-row gap-4 mb-8 justify-center items-center">
+                    <form onSubmit={handleSearch} className="relative w-full max-w-4xl">
+                        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-6 w-6" />
                         <Input
-                            placeholder="Buscar PLACA ou CLIENTE... (Enter)"
-                            className="pl-10 h-14 text-lg bg-card border-border focus:ring-primary"
+                            placeholder="DIGITE A PLACA (Ex: ABC1234) ou NOME..."
+                            className="pl-12 h-16 text-2xl bg-card border-2 border-border focus:ring-4 focus:ring-primary/20 shadow-lg"
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground hidden md:block border px-2 py-1 rounded bg-secondary">
+                            ENTER
+                        </div>
                     </form>
-                    <Link href="/new" className="w-full md:w-auto">
-                        <Button className="w-full h-14 text-xl font-bold uppercase tracking-wider bg-primary hover:bg-blue-600 shadow-xl shadow-blue-900/20">
-                            <Plus className="mr-2 h-6 w-6" /> Nova Troca
-                        </Button>
-                    </Link>
                 </div>
 
                 {/* ANALYTICS SECTION */}
