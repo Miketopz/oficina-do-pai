@@ -5,9 +5,31 @@ import { createClient } from '@/lib/supabase';
 import { Header } from '@/components/features/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, MessageCircle, Trash2, AlertTriangle, Check, Plus } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Trash2, AlertTriangle, Check, Plus, Info } from 'lucide-react';
 import Link from 'next/link';
 import { cn, getServiceStatus, statusStyles } from '@/lib/utils';
+
+const FilterRow = ({ label, value }: { label: string, value: string }) => {
+    const isKept = value.includes('(MANTIDO)');
+    const cleanValue = value.replace('(MANTIDO)', '').trim();
+
+    return (
+        <div className="flex justify-between border-b border-dashed pb-1 items-center">
+            <span className={cn("flex items-center gap-2", isKept ? "text-gray-400" : "text-gray-500")}>
+                {isKept ? (
+                    <Info className="w-4 h-4 text-gray-300" />
+                ) : (
+                    <Check className="w-4 h-4 text-green-500" />
+                )}
+                {label}:
+            </span>
+            <span className={cn("font-medium text-right", isKept && "text-gray-400 italic")}>
+                {cleanValue}
+                {isKept && <span className="text-xs ml-1 opacity-50">(Mantido)</span>}
+            </span>
+        </div>
+    );
+};
 
 export default function VehiclePage({ params }: { params: { id: string } }) {
     const [vehicle, setVehicle] = useState<any>(null);
@@ -197,36 +219,16 @@ export default function VehiclePage({ params }: { params: { id: string } }) {
                                         </div>
                                     )}
                                     {record.filter_oil && (
-                                        <div className="flex justify-between border-b border-dashed pb-1 items-center">
-                                            <span className="text-gray-500 flex items-center gap-2">
-                                                <Check className="w-4 h-4 text-green-500" /> Filtro de Óleo:
-                                            </span>
-                                            <span className="font-medium text-right">{record.filter_oil}</span>
-                                        </div>
+                                        <FilterRow label="Filtro de Óleo" value={record.filter_oil} />
                                     )}
                                     {record.filter_air && (
-                                        <div className="flex justify-between border-b border-dashed pb-1 items-center">
-                                            <span className="text-gray-500 flex items-center gap-2">
-                                                <Check className="w-4 h-4 text-green-500" /> Filtro de Ar:
-                                            </span>
-                                            <span className="font-medium text-right">{record.filter_air}</span>
-                                        </div>
+                                        <FilterRow label="Filtro de Ar" value={record.filter_air} />
                                     )}
                                     {record.filter_fuel && (
-                                        <div className="flex justify-between border-b border-dashed pb-1 items-center">
-                                            <span className="text-gray-500 flex items-center gap-2">
-                                                <Check className="w-4 h-4 text-green-500" /> Filtro de Combustível:
-                                            </span>
-                                            <span className="font-medium text-right">{record.filter_fuel}</span>
-                                        </div>
+                                        <FilterRow label="Filtro de Combustível" value={record.filter_fuel} />
                                     )}
                                     {record.filter_cabin && (
-                                        <div className="flex justify-between border-b border-dashed pb-1 items-center">
-                                            <span className="text-gray-500 flex items-center gap-2">
-                                                <Check className="w-4 h-4 text-green-500" /> Filtro de Cabine:
-                                            </span>
-                                            <span className="font-medium text-right">{record.filter_cabin}</span>
-                                        </div>
+                                        <FilterRow label="Filtro de Cabine" value={record.filter_cabin} />
                                     )}
                                     {record.notes && (
                                         <div className="col-span-full mt-2 bg-yellow-50 p-3 rounded text-sm text-yellow-800">

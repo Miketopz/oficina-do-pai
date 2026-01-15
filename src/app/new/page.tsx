@@ -31,6 +31,54 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
+const FilterInput = ({ label, name, register, watch, setValue }: any) => {
+    const [changed, setChanged] = useState(true);
+    const value = watch(name);
+
+    useEffect(() => {
+        // When submitting, we might need to handle the prefix logic here or in onSubmit.
+        // Actually, let's keep it simple: We visualy toggle.
+        // But to save, we need to inject the prefix manually if !changed.
+        // WE WILL HANDLE PREFIX IN ONSUBMIT.
+    }, [changed]);
+
+    return (
+        <div className="flex items-center gap-2 bg-white p-2 border rounded-lg">
+            <div className="flex-1">
+                <label className="text-xs font-bold text-gray-500 uppercase ml-1">{label}</label>
+                <Input
+                    {...register(name)}
+                    placeholder={changed ? "Modelo (Novo)" : "Modelo (Mantido)"}
+                    className={cn(
+                        "h-10 text-lg border-0 focus-visible:ring-0 px-1 shadow-none",
+                        !changed && "text-gray-500 italic"
+                    )}
+                />
+            </div>
+            <div
+                className={cn(
+                    "flex items-center gap-2 px-3 py-2 rounded cursor-pointer transition-all border",
+                    changed ? "bg-green-100 border-green-300 text-green-700" : "bg-gray-100 border-gray-300 text-gray-500"
+                )}
+                onClick={() => {
+                    const newValue = !changed;
+                    setChanged(newValue);
+                    // Special marker handling
+                    const current = value?.replace('(MANTIDO) ', '') || '';
+                    if (!newValue) {
+                        setValue(name, '(MANTIDO) ' + current);
+                    } else {
+                        setValue(name, current);
+                    }
+                }}
+            >
+                {changed ? <CheckCircle2 className="w-5 h-5" /> : <div className="w-5 h-5 rounded-full border-2 border-gray-400" />}
+                <span className="text-sm font-bold select-none">{changed ? "TROCOU" : "MANTEVE"}</span>
+            </div>
+        </div>
+    );
+};
+
 function NewServiceForm() {
     const router = useRouter();
     const supabase = createClient();
@@ -349,13 +397,37 @@ function NewServiceForm() {
                                 </CardContent>
                             </Card>
 
-                            {/* Filter Inputs (Simplified) */}
-                            <div className="grid grid-cols-1 gap-2">
-                                <Input {...register('filterOil')} placeholder="Filtro de Óleo" className="h-12 text-slate-900 bg-white" />
-                                <Input {...register('filterAir')} placeholder="Filtro de Ar" className="h-12 text-slate-900 bg-white" />
-                                <Input {...register('filterFuel')} placeholder="Filtro de Combustível" className="h-12 text-slate-900 bg-white" />
-                                <Input {...register('filterCabin')} placeholder="Filtro de Cabine" className="h-12 text-slate-900 bg-white" />
-                                <Input {...register('notes')} placeholder="Observações" className="h-12 text-slate-900 bg-white" />
+                            {/* Filter Inputs (Enhanced with Keep Option) */}
+                            <div className="grid grid-cols-1 gap-4">
+                                <FilterInput
+                                    label="Filtro de Óleo"
+                                    name="filterOil"
+                                    register={register}
+                                    watch={watch}
+                                    setValue={setValue}
+                                />
+                                <FilterInput
+                                    label="Filtro de Ar"
+                                    name="filterAir"
+                                    register={register}
+                                    watch={watch}
+                                    setValue={setValue}
+                                />
+                                <FilterInput
+                                    label="Filtro de Combustível"
+                                    name="filterFuel"
+                                    register={register}
+                                    watch={watch}
+                                    setValue={setValue}
+                                />
+                                <FilterInput
+                                    label="Filtro de Cabine"
+                                    name="filterCabin"
+                                    register={register}
+                                    watch={watch}
+                                    setValue={setValue}
+                                />
+                                <Input {...register('notes')} placeholder="Observações Gerais" className="h-12 text-slate-900 bg-white" />
                             </div>
 
                             <div className="flex gap-4">
