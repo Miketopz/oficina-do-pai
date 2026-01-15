@@ -16,6 +16,12 @@ const deduplicateServices = (services: Service[]) => {
 };
 
 export const maintenanceService = {
+
+    /**
+     * Fetches the 20 most recent maintenance records.
+     * Deduplicates multiple services for the same vehicle (Business Rule: Show one card per vehicle in 'Recent' tab).
+     * @returns List of unique Service objects.
+     */
     async getRecentServices(): Promise<Service[]> {
         const supabase = createClient();
         const { data: services, error } = await supabase
@@ -54,6 +60,10 @@ export const maintenanceService = {
         return deduplicateServices(formatted);
     },
 
+    /**
+     * Lists all clients with their vehicle counts.
+     * Used for the 'Fleet' tab in the Dashboard.
+     */
     async getClientsWithFleet(): Promise<ClientWithFleet[]> {
         const supabase = createClient();
         const { data: clients, error } = await supabase
@@ -77,6 +87,9 @@ export const maintenanceService = {
         }));
     },
 
+    /**
+     * Fetches all vehicles for raw fleet management.
+     */
     async getFleet(): Promise<Vehicle[]> {
         const supabase = createClient();
         const { data: vehicles, error } = await supabase
@@ -103,6 +116,11 @@ export const maintenanceService = {
         }));
     },
 
+    /**
+     * Direct lookup for exact plate match.
+     * Used for redirection logic (Smart Search).
+     * @param plate Vehicle License Plate
+     */
     async getVehicleByPlate(plate: string): Promise<string | null> {
         const supabase = createClient();
         const { data, error } = await supabase
@@ -118,6 +136,11 @@ export const maintenanceService = {
         return data ? data.id : null;
     },
 
+    /**
+     * Performs a fuzzy search using PostgreSQL Trigrams (pg_trgm) via RPC.
+     * Matches against Plate (including typos) or Client Name.
+     * @param query User search input
+     */
     async search(query: string): Promise<Service[]> {
         const supabase = createClient();
         const { data, error } = await supabase
@@ -144,6 +167,10 @@ export const maintenanceService = {
         }));
     },
 
+    /**
+     * Permanently deletes a vehicle and all its history.
+     * Use with caution.
+     */
     async deleteVehicle(id: string) {
         const supabase = createClient();
         const { error } = await supabase.from('vehicles').delete().eq('id', id);
