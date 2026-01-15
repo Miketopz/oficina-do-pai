@@ -146,29 +146,49 @@ function NewServiceForm() {
             }
 
             // 2. Resolve Client
+            // --- NOVA LÓGICA DE RESOLUÇÃO DE CLIENTE ---
             let clientId = preFilledClientId || existingOwnerId;
-            // If vehicle exists, we PREFER the existing owner ID unless explicit change (but we block explicit change below)
 
             if (!clientId) {
-                // Only search/create if we don't know the owner yet
                 const finalPhone = data.clientPhone ? data.clientPhone.trim() : null;
                 const finalName = data.clientName.trim();
 
-                // A. Search by PHONE
+                // 1. Tentar primeiro pelo TELEFONE (Identificador Único)
                 if (finalPhone) {
-                    const { data: phoneMatch } = await supabase.from('clients').select('id').eq('phone', finalPhone).maybeSingle();
-                    if (phoneMatch) clientId = phoneMatch.id;
+                    const { data: phoneMatch } = await supabase
+                        .from('clients')
+                        .select('id')
+                        .eq('phone', finalPhone)
+                        .maybeSingle();
+
+                    if (phoneMatch) {
+                        clientId = phoneMatch.id;
+                    }
+                    // Se forneceu telefone e não achou, NÃO vamos procurar por nome.
+                    // Isso garante que "João Carlos" com telefone NOVO seja um NOVO cliente.
                 }
 
-                // B. Search by NAME
-                if (!clientId) {
-                    const { data: nameMatch } = await supabase.from('clients').select('id').ilike('name', finalName).maybeSingle();
-                    if (nameMatch) clientId = nameMatch.id;
+                // 2. Se NÃO forneceu telefone, tentamos pelo NOME
+                if (!clientId && !finalPhone) {
+                    const { data: nameMatch } = await supabase
+                        .from('clients')
+                        .select('id')
+                        .ilike('name', finalName)
+                        .maybeSingle();
+
+                    if (nameMatch) {
+                        clientId = nameMatch.id;
+                    }
                 }
 
-                // C. Create NEW CLIENT (Only if truly new)
+                // 3. Se ainda não temos ID, criamos um NOVO CLIENTE
                 if (!clientId) {
-                    const { data: newClient, error } = await supabase.from('clients').insert({ name: finalName, phone: finalPhone }).select().single();
+                    const { data: newClient, error } = await supabase
+                        .from('clients')
+                        .insert({ name: finalName, phone: finalPhone })
+                        .select()
+                        .single();
+
                     if (error) throw error;
                     clientId = newClient.id;
                 }
@@ -328,7 +348,7 @@ function NewServiceForm() {
                             </div>
 
                             <div className="flex gap-4">
-                                <Button onClick={prevStep} variant="outline" className="flex-1 h-16">Voltar</Button>
+                                <Button onClick={prevStep} type="button" variant="outline" className="flex-1 h-16">Voltar</Button>
                                 <Button onClick={nextStep} className="flex-[2] h-16 bg-blue-600 text-xl font-bold">Revisar</Button>
                             </div>
                         </div>
@@ -349,7 +369,7 @@ function NewServiceForm() {
                                 </CardContent>
                             </Card>
                             <div className="flex gap-4">
-                                <Button onClick={prevStep} variant="outline" className="flex-1 h-20">Voltar</Button>
+                                <Button onClick={prevStep} type="button" variant="outline" className="flex-1 h-20">Voltar</Button>
                                 <Button onClick={handleSubmit(onSubmit)} disabled={loading} className="flex-[2] h-20 bg-green-600 text-2xl font-black hover:bg-green-700">
                                     {loading ? 'SALVANDO...' : 'CONFIRMAR'}
                                 </Button>

@@ -179,7 +179,7 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
                         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                             <DialogTrigger asChild>
                                 <Button className="h-14 px-8 text-lg font-bold uppercase bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-900/20 rounded-xl">
-                                    <Plus className="mr-2" /> Novo Carro
+                                    <Plus className="mr-2" /> Novo Veículo
                                 </Button>
                             </DialogTrigger>
                             <DialogContent>
