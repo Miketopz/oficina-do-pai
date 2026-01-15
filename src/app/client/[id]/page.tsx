@@ -8,6 +8,16 @@ import { VehicleCard } from '@/components/features/VehicleCard';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Plus, User, Phone, Car, ArrowLeft, Trash2, Wrench } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatPlate } from '@/lib/utils';
@@ -111,34 +121,41 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
         }
     };
 
-    const handleDeleteVehicle = async (vehicleId: string, model: string) => {
-        if (confirm(`Remover ${model} da frota do cliente?`)) {
-            try {
-                // Using service to handle constraints if any (though currently it's a simple delete)
-                await maintenanceService.deleteVehicle(vehicleId);
-                toast.success("Veículo removido.", {
-                    description: `O ${model} foi retirado da lista.`,
-                    icon: <Trash2 className="h-5 w-5 text-red-500" />
-                });
-                fetchData();
-            } catch (error) {
-                toast.error("Erro ao remover veículo.");
-            }
+    // State for Confirm Dialogs
+    const [vehicleToDelete, setVehicleToDelete] = useState<{ id: string, model: string } | null>(null);
+    const [clientToDelete, setClientToDelete] = useState<boolean>(false);
+
+    // ... (fetchData implementation remains)
+
+    const handleDeleteVehicle = async () => {
+        if (!vehicleToDelete) return;
+
+        try {
+            await maintenanceService.deleteVehicle(vehicleToDelete.id);
+            toast.success("Veículo removido.", {
+                description: `O ${vehicleToDelete.model} foi retirado da lista.`,
+                icon: <Trash2 className="h-5 w-5 text-red-500" />
+            });
+            fetchData();
+        } catch (error) {
+            toast.error("Erro ao remover veículo.");
+        } finally {
+            setVehicleToDelete(null);
         }
     };
 
     const handleDeleteClient = async () => {
-        if (confirm(`ATENÇÃO: Deseja realmente excluir o cliente ${client.name}? Isso apagará todos os seus veículos e históricos permanentemente.`)) {
-            try {
-                const { error } = await supabase.from('clients').delete().eq('id', params.id);
-                if (error) throw error;
-                toast.success("Cliente removido com sucesso.");
-                router.push('/');
-                router.refresh();
-            } catch (error) {
-                console.error(error);
-                toast.error("Erro ao excluir cliente.");
-            }
+        try {
+            const { error } = await supabase.from('clients').delete().eq('id', params.id);
+            if (error) throw error;
+            toast.success("Cliente removido com sucesso.");
+            router.push('/');
+            router.refresh();
+        } catch (error) {
+            console.error(error);
+            toast.error("Erro ao excluir cliente.");
+        } finally {
+            setClientToDelete(false);
         }
     };
 
@@ -171,7 +188,7 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
                     </div>
 
                     <div className="flex flex-col gap-2 w-full md:w-auto">
-                        <Button variant="destructive" size="sm" onClick={handleDeleteClient} className="opacity-70 hover:opacity-100 w-full md:w-auto">
+                        <Button variant="destructive" size="sm" onClick={() => setClientToDelete(true)} className="opacity-70 hover:opacity-100 w-full md:w-auto">
                             <Trash2 className="h-4 w-4 mr-2" /> Excluir Perfil
                         </Button>
 
@@ -242,7 +259,7 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
                                 }
                                 status="ok"
                                 actionIcon={<Trash2 size={18} />}
-                                onAction={() => handleDeleteVehicle(vehicle.id, vehicle.model)}
+                                onAction={() => setVehicleToDelete({ id: vehicle.id, model: vehicle.model })}
                             />
                         </div>
                     ))}
@@ -253,6 +270,48 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
                         </div>
                     )}
                 </div>
+
+                {/* ALERT DIALOGS */}
+                <AlertDialog open={!!vehicleToDelete} onOpenChange={() => setVehicleToDelete(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir Veículo?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Você está prestes a remover o veículo <strong>{vehicleToDelete?.model}</strong> da oficina.
+                                Esta ação não pode ser desfeita e todo o histórico de manutenção dele será perdido.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDeleteVehicle} className="bg-red-600 hover:bg-red-700 text-white">
+                                Sim, Excluir Veículo
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+
+                <AlertDialog open={clientToDelete} onOpenChange={setClientToDelete}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle className="text-red-600">⚠ Exclusão Crítica de Cliente</AlertDialogTitle>
+                            <AlertDialogDescription className="text-base text-gray-800 font-medium">
+                                Você está prestes a excluir <strong>{client.name}</strong>.
+                                <br /><br />
+                                Isso apagará também:
+                                <ul className="list-disc pl-5 mt-2 text-gray-600 font-normal">
+                                    <li>Todos os {vehicles.length} veículos cadastrados.</li>
+                                    <li>Todo o histórico de manutenções.</li>
+                                </ul>
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDeleteClient} className="bg-red-600 hover:bg-red-700 text-white font-bold">
+                                CONFIRMAR EXCLUSÃO
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
 
             </main>
         </div>

@@ -31,6 +31,20 @@ const FilterRow = ({ label, value }: { label: string, value: string }) => {
     );
 };
 
+import { toast } from 'sonner';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+// ... FilterRow code ...
+
 export default function VehiclePage({ params }: { params: { id: string } }) {
     const [vehicle, setVehicle] = useState<any>(null);
     const [records, setRecords] = useState<any[]>([]);
@@ -38,6 +52,19 @@ export default function VehiclePage({ params }: { params: { id: string } }) {
     const supabase = createClient();
 
     const [prediction, setPrediction] = useState<string | null>(null);
+    const [recordToDelete, setRecordToDelete] = useState<string | null>(null); // State for delete dialog
+
+    const handleDeleteRecord = async (id: string) => {
+        try {
+            await supabase.from('maintenance_records').delete().eq('id', id);
+            toast.success("Registro apagado.");
+            setRecordToDelete(null);
+            // manually refresh records or reload
+            window.location.reload();
+        } catch (error) {
+            toast.error("Erro ao apagar registro.");
+        }
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -194,12 +221,7 @@ export default function VehiclePage({ params }: { params: { id: string } }) {
                                         <div className="flex items-center gap-4">
                                             <span className="font-mono font-bold text-gray-600">{record.km.toLocaleString()} KM</span>
                                             <button
-                                                onClick={async () => {
-                                                    if (confirm('Tem certeza que deseja APAGAR este registro?')) {
-                                                        await supabase.from('maintenance_records').delete().eq('id', record.id);
-                                                        window.location.reload();
-                                                    }
-                                                }}
+                                                onClick={() => setRecordToDelete(record.id)}
                                                 className="text-red-400 hover:text-red-600 p-1"
                                                 title="Excluir Registro"
                                             >
@@ -244,6 +266,23 @@ export default function VehiclePage({ params }: { params: { id: string } }) {
                         <p className="text-gray-500 italic">Nenhum registro encontrado para este veículo.</p>
                     )}
                 </div>
+
+                <AlertDialog open={!!recordToDelete} onOpenChange={() => setRecordToDelete(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir Registro?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Esta ação apagará permanentemente o registro de manutenção.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => recordToDelete && handleDeleteRecord(recordToDelete)} className="bg-red-600 hover:bg-red-700">
+                                Sim, Excluir
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
 
             </main>
         </div>
