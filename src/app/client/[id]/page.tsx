@@ -187,7 +187,7 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
                                             onChange={e => setNewPlate(formatPlate(e.target.value))}
                                             placeholder="ABC1234"
                                             maxLength={7}
-                                            className="text-2xl font-mono uppercase"
+                                            className="text-2xl font-mono uppercase text-slate-900 bg-white"
                                         />
                                     </div>
                                     <div>
@@ -196,7 +196,7 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
                                             value={newModel}
                                             onChange={e => setNewModel(e.target.value)}
                                             placeholder="Ex: Fiat Uno"
-                                            className="text-lg"
+                                            className="text-lg text-slate-900 bg-white"
                                         />
                                     </div>
                                     <Button type="submit" disabled={addingVehicle} className="w-full h-12 text-lg font-bold bg-green-600 hover:bg-green-700">
