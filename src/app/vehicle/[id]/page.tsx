@@ -10,15 +10,16 @@ import Link from 'next/link';
 import { cn, getServiceStatus, statusStyles } from '@/lib/utils';
 
 const FilterRow = ({ label, value }: { label: string, value?: string | null }) => {
-    // Check if value exists and is not empty string
-    const hasValue = value && value.trim().length > 0;
-    // Clean up old legacy "MANTIDO" tags just in case
-    const displayValue = hasValue ? value?.replace('(MANTIDO)', '').trim() : 'Não trocado';
+    const cleanValue = value ? value.replace('(MANTIDO) ', '').replace('(MANTIDO)', '').trim() : '';
+    const hasValue = cleanValue.length > 0;
+    // It is effectively "Changed" if it has value AND does NOT contain (MANTIDO)
+    const isChanged = hasValue && !value?.includes('(MANTIDO)');
+    const isKept = value?.includes('(MANTIDO)');
 
     return (
         <div className="flex justify-between border-b border-dashed border-gray-100 pb-2 items-center last:border-0 hover:bg-gray-50 px-1 rounded transition-colors">
-            <span className={cn("flex items-center gap-2 font-medium text-sm", hasValue ? "text-gray-700" : "text-gray-400")}>
-                {hasValue ? (
+            <span className={cn("flex items-center gap-2 font-medium text-sm text-gray-700")}>
+                {isChanged ? (
                     <div className="bg-green-100 p-1 rounded-full">
                         <Check className="w-3 h-3 text-green-600 font-bold" />
                     </div>
@@ -29,8 +30,10 @@ const FilterRow = ({ label, value }: { label: string, value?: string | null }) =
                 )}
                 {label}
             </span>
-            <span className={cn("font-bold text-right text-sm", hasValue ? "text-slate-800" : "text-red-300 italic")}>
-                {displayValue}
+            <span className={cn("font-bold text-right text-sm", isChanged ? "text-slate-800" : "text-gray-400 italic")}>
+                {isChanged ? cleanValue : (
+                    isKept && hasValue ? `${cleanValue} (Mantido)` : "Não trocado"
+                )}
             </span>
         </div>
     );

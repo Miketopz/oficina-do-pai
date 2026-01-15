@@ -31,15 +31,60 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-const FilterInput = ({ label, name, register }: any) => {
+const FilterInput = ({ label, name, register, watch, setValue }: any) => {
+    const currentValue = watch(name);
+    // If value has (MANTIDO), it's not changed. Default to true (Changed).
+    const [isChanged, setIsChanged] = useState(!currentValue?.includes('(MANTIDO)'));
+
+    const handleCheckChange = (checked: boolean) => {
+        setIsChanged(checked);
+        const cleanValue = currentValue?.replace('(MANTIDO) ', '') || '';
+        if (!checked) {
+            setValue(name, '(MANTIDO) ' + cleanValue);
+        } else {
+            setValue(name, cleanValue);
+        }
+    };
+
+    const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const text = e.target.value;
+        if (!isChanged) {
+            setValue(name, '(MANTIDO) ' + text);
+        } else {
+            setValue(name, text);
+        }
+    };
+
+    // Clean value for display in input
+    const displayValue = currentValue?.replace('(MANTIDO) ', '') || '';
+
     return (
-        <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-500 uppercase ml-1">{label}</label>
-            <Input
-                {...register(name)}
-                placeholder="Ex: W610/3 (ou deixe vazio)"
-                className="h-12 text-lg text-slate-900 bg-white border-2 border-slate-200 focus:border-blue-500"
-            />
+        <div className="flex gap-3 items-end">
+            <div className="flex-1 space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase ml-1">{label}</label>
+                <Input
+                    value={displayValue}
+                    onChange={handleTextChange}
+                    placeholder="Modelo do Filtro"
+                    className={cn(
+                        "h-12 text-lg bg-white border-2 focus:border-blue-500",
+                        !isChanged ? "border-gray-200 text-gray-500 bg-gray-50" : "border-slate-200 text-slate-900"
+                    )}
+                />
+            </div>
+            <div className="h-12 flex items-center">
+                <label className="flex items-center gap-2 cursor-pointer select-none bg-white border-2 border-gray-100 px-3 h-12 rounded-lg hover:border-gray-200 transition-colors">
+                    <input
+                        type="checkbox"
+                        className="w-5 h-5 accent-green-600 cursor-pointer"
+                        checked={isChanged}
+                        onChange={(e) => handleCheckChange(e.target.checked)}
+                    />
+                    <span className={cn("font-bold text-sm uppercase", isChanged ? "text-green-700" : "text-gray-400")}>
+                        Trocou?
+                    </span>
+                </label>
+            </div>
         </div>
     );
 };
@@ -368,21 +413,29 @@ function NewServiceForm() {
                                     label="Filtro de Óleo"
                                     name="filterOil"
                                     register={register}
+                                    watch={watch}
+                                    setValue={setValue}
                                 />
                                 <FilterInput
                                     label="Filtro de Ar"
                                     name="filterAir"
                                     register={register}
+                                    watch={watch}
+                                    setValue={setValue}
                                 />
                                 <FilterInput
                                     label="Filtro de Combustível"
                                     name="filterFuel"
                                     register={register}
+                                    watch={watch}
+                                    setValue={setValue}
                                 />
                                 <FilterInput
                                     label="Filtro de Cabine"
                                     name="filterCabin"
                                     register={register}
+                                    watch={watch}
+                                    setValue={setValue}
                                 />
                                 <Input {...register('notes')} placeholder="Observações Gerais" className="h-12 text-slate-900 bg-white" />
                             </div>
