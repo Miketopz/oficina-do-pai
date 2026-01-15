@@ -92,7 +92,8 @@ export default function VehiclePage({ params }: { params: { id: string } }) {
                     .from('maintenance_records')
                     .select('*')
                     .eq('vehicle_id', params.id)
-                    .order('date', { ascending: false });
+                    .order('date', { ascending: false })
+                    .order('created_at', { ascending: false });
 
                 const recs = historyData || [];
                 setRecords(recs);
