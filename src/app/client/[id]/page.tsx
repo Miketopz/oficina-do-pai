@@ -265,8 +265,20 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
                     ))}
 
                     {vehicles.length === 0 && (
-                        <div className="col-span-full py-12 text-center border-2 border-dashed border-gray-200 rounded-xl">
-                            <p className="text-gray-400 text-lg">Este cliente ainda não possui veículos cadastrados.</p>
+                        <div className="col-span-full py-16 text-center bg-white rounded-2xl border-2 border-dashed border-gray-200 shadow-sm flex flex-col items-center justify-center">
+                            <div className="bg-blue-50 h-20 w-20 rounded-full flex items-center justify-center mb-4">
+                                <Car className="h-10 w-10 text-blue-300" />
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">Sem veículos cadastrados</h3>
+                            <p className="text-gray-500 max-w-sm mb-6">
+                                Adicione o primeiro veículo para começar a gerenciar a frota deste cliente.
+                            </p>
+                            <Button
+                                onClick={() => setIsDialogOpen(true)}
+                                className="h-12 px-8 text-lg font-bold bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-900/10"
+                            >
+                                <Plus className="mr-2" /> Adicionar Primeiro Veículo
+                            </Button>
                         </div>
                     )}
                 </div>

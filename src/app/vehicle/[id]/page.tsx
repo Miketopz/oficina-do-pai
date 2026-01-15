@@ -263,7 +263,20 @@ export default function VehiclePage({ params }: { params: { id: string } }) {
                     })}
 
                     {records.length === 0 && (
-                        <p className="text-gray-500 italic">Nenhum registro encontrado para este veículo.</p>
+                        <div className="text-center py-16 px-4 bg-white rounded-2xl border-2 border-dashed border-gray-200">
+                            <div className="bg-gray-50 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <AlertTriangle className="h-10 w-10 text-gray-300" />
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">Histórico Vazio</h3>
+                            <p className="text-gray-500 max-w-sm mx-auto mb-8">
+                                Este veículo ainda não possui registros de manutenção cadastrados nesta frota.
+                            </p>
+                            <Link href={`/new?plate=${vehicle.plate}&clientId=${vehicle.client.id}&model=${encodeURIComponent(vehicle.model)}`}>
+                                <Button variant="outline" className="h-12 border-blue-200 hover:bg-blue-50 text-blue-700 font-bold">
+                                    <Plus className="mr-2 h-4 w-4" /> Adicionar Primeira Troca
+                                </Button>
+                            </Link>
+                        </div>
                     )}
                 </div>
 
