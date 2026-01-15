@@ -95,9 +95,10 @@ export const maintenanceService = {
             id: v.id,
             plate: v.plate,
             model: v.model,
+            client_id: v.client?.id, // Added client_id
             client: {
-                id: v.client.id,
-                name: v.client.name
+                id: v.client?.id,
+                name: v.client?.name
             }
         }));
     },
@@ -226,6 +227,7 @@ export const maintenanceService = {
                 const ownerName = existingVehicle.clients?.name || 'Outro Cliente';
                 throw new Error(`Esta placa já pertence a ${ownerName}. Impossível registrar para outra pessoa.`);
             }
+            vehicleId = existingVehicle.id; // Assign here
         } else {
             // Create New Vehicle
             const { data: newVehicle, error } = await supabase

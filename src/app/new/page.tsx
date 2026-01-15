@@ -13,6 +13,8 @@ import { CheckCircle2, User, Car, Wrench, ArrowRight } from 'lucide-react';
 import { cn, formatPhone, formatPlate } from '@/lib/utils';
 import { toast } from 'sonner';
 
+import { maintenanceService } from '@/services/maintenanceService';
+
 // Validation Schema
 const formSchema = z.object({
     clientName: z.string().min(3, "Nome deve ter pelo menos 3 letras"),
@@ -199,101 +201,10 @@ function NewServiceForm() {
         setLoading(true);
 
         try {
-            // 1. Resolve Vehicle FIRST (Check ownership)
-            let vehicleId;
-            let existingOwnerId = null;
-
-            const { data: existingVehicle } = await supabase
-                .from('vehicles')
-                .select('id, client_id, clients(name)')
-                .eq('plate', data.vehiclePlate)
-                .maybeSingle();
-
-            if (existingVehicle) {
-                vehicleId = existingVehicle.id;
-                existingOwnerId = existingVehicle.client_id;
-            }
-
-            // 2. Resolve Client
-            // --- NOVA LÓGICA DE RESOLUÇÃO DE CLIENTE ---
-            let clientId = preFilledClientId || existingOwnerId;
-
-            if (!clientId) {
-                const finalPhone = data.clientPhone ? data.clientPhone.trim() : null;
-                const finalName = data.clientName.trim();
-
-                // 1. Tentar primeiro pelo TELEFONE (Identificador Único)
-                if (finalPhone) {
-                    const { data: phoneMatch } = await supabase
-                        .from('clients')
-                        .select('id')
-                        .eq('phone', finalPhone)
-                        .maybeSingle();
-
-                    if (phoneMatch) {
-                        clientId = phoneMatch.id;
-                    }
-                    // Se forneceu telefone e não achou, NÃO vamos procurar por nome.
-                    // Isso garante que "João Carlos" com telefone NOVO seja um NOVO cliente.
-                }
-
-                // 2. Se NÃO forneceu telefone, tentamos pelo NOME
-                if (!clientId && !finalPhone) {
-                    const { data: nameMatch } = await supabase
-                        .from('clients')
-                        .select('id')
-                        .ilike('name', finalName)
-                        .maybeSingle();
-
-                    if (nameMatch) {
-                        clientId = nameMatch.id;
-                    }
-                }
-
-                // 3. Se ainda não temos ID, criamos um NOVO CLIENTE
-                if (!clientId) {
-                    const { data: newClient, error } = await supabase
-                        .from('clients')
-                        .insert({ name: finalName, phone: finalPhone })
-                        .select()
-                        .single();
-
-                    if (error) throw error;
-                    clientId = newClient.id;
-                }
-            }
-
-            // 3. Final Safety Check & Vehicle Creation
-            if (existingVehicle) {
-                // Safety Block: If we resolved a clientId different from vehicle owner
-                if (existingOwnerId && clientId !== existingOwnerId) {
-                    // @ts-ignore
-                    const ownerName = existingVehicle.clients?.name || 'Outro Cliente';
-                    toast.error(`Esta placa já pertence a ${ownerName}. Impossível registrar para outra pessoa.`);
-                    setLoading(false);
-                    return;
-                }
-            } else {
-                // Create New Vehicle
-                const { data: newVehicle, error } = await supabase.from('vehicles').insert({ client_id: clientId, plate: data.vehiclePlate, model: data.vehicleModel }).select().single();
-                if (error) throw error;
-                vehicleId = newVehicle.id;
-            }
-
-            // 3. Create Record
-            const { error: recordError } = await supabase.from('maintenance_records').insert({
-                vehicle_id: vehicleId,
-                date: data.date,
-                km: data.km,
-                oil: data.oil,
-                filter_oil: data.filterOil,
-                filter_air: data.filterAir,
-                filter_fuel: data.filterFuel,
-                filter_cabin: data.filterCabin,
-                notes: data.notes
+            await maintenanceService.createMaintenanceRecord({
+                ...data,
+                preFilledClientId
             });
-
-            if (recordError) throw recordError;
 
             // Success Feedback
             toast.success("Serviço registrado com sucesso! 🚀");
