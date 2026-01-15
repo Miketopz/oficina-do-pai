@@ -10,6 +10,7 @@ export function useMaintenanceDashboard() {
     const [recentServices, setRecentServices] = useState<Service[]>([]);
     const [fleet, setFleet] = useState<Vehicle[]>([]);
     const [clients, setClients] = useState<ClientWithFleet[]>([]);
+    const [predictions, setPredictions] = useState<any[]>([]); // New State
     const [stats, setStats] = useState({ monthly: 0, topOil: 'N/A' });
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
@@ -24,14 +25,16 @@ export function useMaintenanceDashboard() {
     const fetchInitialData = async () => {
         setLoading(true);
         try {
-            const [services, clientsData, monthlyCount, topOil] = await Promise.all([
+            const [services, clientsData, monthlyCount, topOil, predictedData] = await Promise.all([
                 maintenanceService.getRecentServices(),
                 maintenanceService.getClientsWithFleet(),
                 analyticsService.getMonthlyServices(),
-                analyticsService.getTopOil()
+                analyticsService.getTopOil(),
+                analyticsService.getPredictedMaintenance() // New Fetch
             ]);
             setRecentServices(services);
             setClients(clientsData);
+            setPredictions(predictedData);
             setStats({ monthly: monthlyCount, topOil });
         } catch (error) {
             console.error(error);
@@ -105,6 +108,7 @@ export function useMaintenanceDashboard() {
         handleSearch,
         notFoundPlate,
         setNotFoundPlate,
+        predictions, // Exposed
         reloadFleet: async () => {
             const updated = await maintenanceService.getClientsWithFleet();
             setClients(updated);

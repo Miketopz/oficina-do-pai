@@ -7,20 +7,53 @@ describe('System Integrity & User Flows', () => {
         cy.intercept('GET', '**/rest/v1/clients*', { body: [] }).as('checkClient');
 
         // Mock successful insertion to allow "Happy Path"
-        cy.intercept('POST', '**/rest/v1/vehicles', {
-            statusCode: 201,
-            body: { id: 'new-vehicle-123' }
-        }).as('createVehicle');
-
-        cy.intercept('POST', '**/rest/v1/clients', {
+        cy.intercept('POST', '**/rest/v1/clients*', {
             statusCode: 201,
             body: { id: 'new-client-123' }
         }).as('createClient');
 
-        cy.intercept('POST', '**/rest/v1/maintenance_records', {
+        cy.intercept('POST', '**/rest/v1/vehicles*', {
+            statusCode: 201,
+            body: { id: 'new-vehicle-123' }
+        }).as('createVehicle');
+
+        cy.intercept('POST', '**/rest/v1/maintenance_records*', {
             statusCode: 201,
             body: { id: 'new-record-123' }
         }).as('createRecord');
+
+        // Mock Predictions (RPC)
+        cy.intercept('POST', '**/rest/v1/rpc/get_predicted_maintenance', {
+            statusCode: 200,
+            body: [
+                {
+                    vehicle_id: 'v1',
+                    plate: 'PRED999',
+                    model: 'Carro do Futuro',
+                    client_name: 'Marty McFly',
+                    predicted_next_service: new Date(Date.now() + 86400000).toISOString(), // Amanhã
+                    avg_km_per_day: 50,
+                    confibility_score: 'HIGH'
+                }
+            ]
+        }).as('getPredictions');
+
+        // Mock Fuzzy Search (RPC)
+        cy.intercept('POST', '**/rest/v1/rpc/search_maintenance', {
+            statusCode: 200,
+            body: [
+                {
+                    id: 's1',
+                    plate: 'FUZZY01',
+                    model: 'Fusca Errado',
+                    client_name: 'João Typo',
+                    vehicle_id: 'v2',
+                    client_id: 'c2',
+                    date: '2024-01-01',
+                    km: 50000
+                }
+            ]
+        }).as('fuzzySearch');
     });
 
     it('VALIDATION: Rejects empty or invalid forms', () => {
@@ -91,5 +124,40 @@ describe('System Integrity & User Flows', () => {
         // Test Plate Mask
         cy.get('input[name="vehiclePlate"]').type('abc1234');
         cy.get('input[name="vehiclePlate"]').should('have.value', 'ABC1234');
+    });
+
+    it('DASHBOARD: Shows Predictive Alerts', () => {
+        // Force reload to ensure hooks fire
+        cy.visit('/', {
+            headers: { 'x-e2e-bypass': 'true' },
+            onBeforeLoad: (win) => {
+                win.sessionStorage.clear();
+            }
+        });
+
+        // Wait for prediction fetch
+        cy.wait(['@getPredictions', '@checkClient'], { timeout: 10000 });
+
+        // Ensure loading is finished
+        cy.get('body').should('not.contain', 'Carregando...'); // Adjust if you have a specific loading spinner class
+
+        // Assert the Prediction Card is visible
+        cy.contains('Próximas Revisões (Estimadas)').should('be.visible');
+        cy.contains('PRED999').should('be.visible');
+        cy.contains('Marty McFly').should('be.visible');
+    });
+
+    it('SEARCH: Fuzzy Logic works', () => {
+        cy.visit('/', { headers: { 'x-e2e-bypass': 'true' } });
+
+        // Type a "typo" search
+        cy.get('input[placeholder*="DIGITE A PLACA"]').type('Fusca Errado{enter}');
+
+        // Wait for search
+        cy.wait('@fuzzySearch');
+
+        // Expect results from the mock
+        cy.contains('Fusca Errado').should('be.visible');
+        cy.contains('João Typo').should('be.visible');
     });
 });

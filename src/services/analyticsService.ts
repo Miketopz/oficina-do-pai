@@ -51,5 +51,18 @@ export const analyticsService = {
         }
 
         return topOil;
+    },
+
+    async getPredictedMaintenance(): Promise<any[]> {
+        const supabase = createClient();
+        const { data, error } = await supabase
+            .rpc('get_predicted_maintenance');
+
+        if (error) {
+            console.error('Error fetching predictions:', error);
+            return [];
+        }
+
+        return data || [];
     }
 };

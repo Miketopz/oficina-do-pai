@@ -27,21 +27,21 @@ export function VehicleCard({ title, plate, subtitle, detail, link, actionIcon, 
     const statusLabel = status === 'danger' ? 'VENCIDO' : status === 'warning' ? 'PRÓXIMO' : 'EM DIA';
 
     return (
-        <Card className={`group relative overflow-hidden bg-card border border-border shadow-md hover:border-primary transition-all duration-300 ${borderClass}`}>
+        <Card className={`group relative overflow-hidden bg-white border-2 border-slate-100 shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-300 ${borderClass}`}>
             {/* O Link agora envolve o conteúdo principal, mas não o botão de ação */}
             <Link href={link} className="block cursor-pointer">
-                <div className="bg-secondary p-3 flex justify-between items-center border-b border-border">
-                    <div className="bg-white text-black font-black font-mono text-lg px-2 py-1 rounded border-2 border-black tracking-widest uppercase flex items-center shadow-inner">
-                        <div className="w-4 h-2 bg-blue-700 mr-2"></div>
+                <div className="bg-slate-50 p-4 flex justify-between items-center border-b border-slate-100">
+                    <div className="bg-white text-slate-800 font-black font-mono text-xl px-3 py-1.5 rounded-md border border-slate-200 tracking-widest uppercase flex items-center shadow-sm">
+                        <div className="w-3 h-3 rounded-full bg-blue-600 mr-2.5 animate-pulse"></div>
                         {plate}
                     </div>
                     <div className="flex flex-col items-end">
-                        {detail && <span className="text-xs font-bold text-muted-foreground uppercase">{detail}</span>}
                         {status && (
-                            <Badge status={status}>
+                            <Badge status={status} className="mb-1">
                                 {statusLabel}
                             </Badge>
                         )}
+                        {detail && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{detail}</span>}
                     </div>
                 </div>
 

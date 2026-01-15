@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { PredictionCard } from '@/components/ui/prediction-card'; // New Import
 import { StatCard } from '@/components/ui/stat-card';
 import { getServiceStatus } from '@/lib/utils';
 import { Search, Plus, Car, Trash2, Activity, Droplet } from 'lucide-react';
@@ -24,7 +25,8 @@ export default function Dashboard() {
         handleSearch,
         notFoundPlate,
         setNotFoundPlate,
-        reloadFleet
+        reloadFleet,
+        predictions // New Prop
     } = useMaintenanceDashboard();
 
     return (
@@ -90,6 +92,11 @@ export default function Dashboard() {
                         icon={Droplet}
                         description="Preferência da oficina"
                     />
+
+                    {/* Prediction Card */}
+                    <div className="md:col-span-2">
+                        <PredictionCard predictions={predictions} />
+                    </div>
                 </div>
 
                 <Tabs defaultValue="activities" className="space-y-6">

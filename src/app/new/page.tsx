@@ -349,7 +349,7 @@ function NewServiceForm() {
 
                             <div className="flex gap-4">
                                 <Button onClick={prevStep} type="button" variant="outline" className="flex-1 h-16">Voltar</Button>
-                                <Button onClick={nextStep} className="flex-[2] h-16 bg-blue-600 text-xl font-bold">Revisar</Button>
+                                <Button onClick={nextStep} type="button" className="flex-[2] h-16 bg-blue-600 text-xl font-bold">Revisar</Button>
                             </div>
                         </div>
                     )}

@@ -8,7 +8,7 @@ import { VehicleCard } from '@/components/features/VehicleCard';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, User, Phone, Car, ArrowLeft, Trash2 } from 'lucide-react';
+import { Plus, User, Phone, Car, ArrowLeft, Trash2, Wrench } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatPlate } from '@/lib/utils';
 import { maintenanceService } from '@/services/maintenanceService';
@@ -47,7 +47,7 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
             // Fetch Vehicles
             const { data: vehicleData, error: vehicleError } = await supabase
                 .from('vehicles')
-                .select('*')
+                .select('*, maintenance_records(count)')
                 .eq('client_id', params.id)
                 .order('model');
 
@@ -229,8 +229,15 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
                                 link={`/vehicle/${vehicle.id}`} // Takes to history page
                                 detail="VER HISTÓRICO"
                                 subtitle={
-                                    <div className="mt-2 text-sm text-gray-400 font-mono">
-                                        Cadastrado em {new Date().getFullYear()}
+                                    <div className="mt-3 flex flex-col gap-1">
+                                        <div className="flex items-center text-sm font-medium text-gray-500">
+                                            <Wrench className="w-4 h-4 mr-1 text-blue-500" />
+                                            {/* @ts-ignore */}
+                                            {vehicle.maintenance_records?.[0]?.count || 0} trocas realizadas
+                                        </div>
+                                        <div className="text-xs text-gray-400 font-mono">
+                                            Cadastrado em {new Date().getFullYear()}
+                                        </div>
                                     </div>
                                 }
                                 status="ok"
