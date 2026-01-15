@@ -56,7 +56,13 @@ function NewServiceForm() {
                 }
             });
         }
-    }, [preFilledClientId, setValue, supabase]);
+
+        // Auto-fill Plate from URL
+        const preFilledPlate = searchParams.get('plate');
+        if (preFilledPlate) {
+            setValue('vehiclePlate', formatPlate(preFilledPlate));
+        }
+    }, [preFilledClientId, searchParams, setValue, supabase]);
 
     // --- MASK HANDLERS ---
     const handlePlateChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -101,6 +101,21 @@ export const maintenanceService = {
         }));
     },
 
+    async getVehicleByPlate(plate: string): Promise<string | null> {
+        const supabase = createClient();
+        const { data, error } = await supabase
+            .from('vehicles')
+            .select('id')
+            .eq('plate', plate.toUpperCase())
+            .maybeSingle();
+
+        if (error) {
+            console.error(error);
+            return null;
+        }
+        return data ? data.id : null;
+    },
+
     async search(query: string): Promise<Service[]> {
         const supabase = createClient();
         const { data, error } = await supabase

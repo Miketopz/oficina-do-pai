@@ -55,8 +55,31 @@ export function useMaintenanceDashboard() {
 
         setLoading(true);
         try {
+            // 1. SMART CHECK: Is it an existing plate?
+            // Remove whitespace and potential hyphens for the check
+            const cleanSearch = searchTerm.trim().toUpperCase().replace('-', '');
+
+            // Only try direct plate lookup if it looks like a plate (alphanumeric, < 9 chars)
+            if (cleanSearch.length >= 3 && cleanSearch.length <= 8) {
+                const vehicleId = await maintenanceService.getVehicleByPlate(cleanSearch);
+                if (vehicleId) {
+                    // FOUND! Redirect directly to vehicle history
+                    window.location.href = `/vehicle/${vehicleId}`;
+                    return;
+                }
+            }
+
+            // 2. Perform Standard Fuzzy Search (Backend)
             const results = await maintenanceService.search(searchTerm);
             setRecentServices(results);
+
+            // 3. SMART CREATE: If no results and looks like a plate, redirect to New
+            if (results.length === 0 && cleanSearch.length >= 5 && cleanSearch.length <= 7 && /^[A-Z0-9]+$/.test(cleanSearch)) {
+                if (confirm(`Placa ${cleanSearch} não encontrada. Deseja cadastrar agora?`)) {
+                    window.location.href = `/new?plate=${cleanSearch}`;
+                }
+            }
+
         } catch (error) {
             console.error('Erro na busca:', error);
             toast.error('Erro ao realizar a busca.');
